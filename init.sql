@@ -1,0 +1,1 @@
+-- Fase 1 — Esquema y carga del dataset Olist, más los usuarios bonfire_agent (solo SELECT) y bonfire_admin.
