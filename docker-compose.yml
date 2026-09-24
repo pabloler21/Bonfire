@@ -1,1 +1,26 @@
-# Fase 1 — Servicio PostgreSQL que ejecuta init.sql. Fase 7 — suma el servicio de la API.
+# Fase 1 — PostgreSQL con Olist. init.sql corre solo la primera vez (volumen vacío).
+# Fase 7 — suma el servicio de la API.
+services:
+  db:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: bonfire_admin
+      POSTGRES_PASSWORD: ${BONFIRE_ADMIN_PASSWORD:?set BONFIRE_ADMIN_PASSWORD in .env}
+      POSTGRES_DB: olist
+      BONFIRE_AGENT_PASSWORD: ${BONFIRE_AGENT_PASSWORD:?set BONFIRE_AGENT_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${BONFIRE_DB_PORT:-5432}:5432"  # change it in .env if 5432 is taken
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./data/olist:/data/olist:ro
+    healthcheck:
+      # -h 127.0.0.1: during init the image runs a socket-only temp server,
+      # so a TCP check only passes once init.sql has finished loading.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bonfire_admin -d olist"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:
