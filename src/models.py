@@ -1,1 +1,1 @@
-"""Fase 4 — Modelos Pydantic: RiskVerdict, LoopVerdict y el enum Action (ALLOW / BLOCK / INTERRUPT)."""
+"""Fase 4 — Modelos Pydantic: SqlCheck, SqlResult, ReviewVerdict (next_step + probabilidad por trampa) y NextAction."""

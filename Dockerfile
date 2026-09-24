@@ -1,1 +1,1 @@
-# Fase 9 — Imagen de la API.
+# Fase 7 — Imagen de la API.

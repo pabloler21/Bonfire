@@ -1,1 +1,1 @@
-"""Fase 1 — run_sql(query): conecta como bonfire_agent, statement_timeout de 10s, límite de filas y errores de Postgres devueltos como texto."""
+"""Fase 1 — run_sql(query): corre sqlcheck (rechaza sin ejecutar), conecta como bonfire_agent en read-only, statement_timeout de 10s, fetchmany(MAX_ROWS + 1) y errores de Postgres devueltos como texto."""

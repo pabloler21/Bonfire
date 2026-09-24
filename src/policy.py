@@ -1,1 +1,1 @@
-"""Fase 5 — Política pura, sin red: gate(RiskVerdict) -> Action y la regla de parada del loop. Los umbrales viven acá."""
+"""Fase 5 — Política pura, sin red: review_decision(result, verdict, attempt) -> NextAction (answer / retry con motivo / ask_user). Los umbrales y MAX_ATTEMPTS viven acá."""

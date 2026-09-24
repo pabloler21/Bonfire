@@ -1,1 +1,1 @@
-"""Fase 9 — API: POST /ask (SSE con cada paso del loop) y POST /approve/{thread_id} para reanudar tras interrupt()."""
+"""Fase 7 — API: POST /ask devuelve la respuesta final y el resumen de intentos (SQL, decisión de Jev, motivo) en JSON."""

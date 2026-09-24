@@ -1,1 +1,1 @@
-"""Fase 5 — Verificación determinista con sqlglot: tipo de sentencia, DML/DDL, joins sin condición. Corre junto a Jev."""
+"""Fase 1 — Allow-list determinista con sqlglot: una sola sentencia de lectura, sin escritura/DDL/DCL/locks, sin joins sin condición (producto cartesiano explícito)."""
