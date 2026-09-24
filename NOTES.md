@@ -16,3 +16,17 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Link:** <https://docs.typesafe.ai/models>
 - **Qué dice la documentación:** Jev 1.13 (`jev-1.13.0`) publica un rate limit de 1.200 requests por minuto y 250.000 tokens por segundo. El contexto es de 64k tokens por request, con 32k para `state` + la pregunta más larga (coincide con m1).
 - **Impacto:** la Fase 0 mide el rate limit real y lo compara contra el publicado. El plan no cambia.
+
+## 2026-09-24 — Fase 0: el exceso de tokens devuelve 400, no 422
+
+- **Link:** <https://docs.typesafe.ai/api> (tabla de errores)
+- **Qué dice la documentación:** los errores listados son 401, 422 (validación del body), 429 y 529.
+- **Qué se midió** (`notebooks/00_probe.ipynb`, SDK 0.7.0, `jev-1.13.0`): un request que pasa el tope de 32k (`state` + pregunta más larga) o el de 64k (`state` + todas las preguntas) devuelve **HTTP 400** con body `{'detail': {'error_type': 'max_tokens_exceeded'}}`. En el SDK es `TypeSafeBadRequestError`.
+- **Impacto:** el cliente de Jev (Fase 4) tiene que tratar el 400 `max_tokens_exceeded` como un error propio y no reintentarlo. Los dos topes coinciden con lo publicado: 30k OK y 34k rechazado; 56k OK y 68k rechazado.
+
+## 2026-09-24 — Fase 0: el rate limit publicado no se alcanzó
+
+- **Link:** <https://docs.typesafe.ai/models>
+- **Qué dice la documentación:** 1.200 req/min y 250.000 tok/s. Los límites "se ajustan dinámicamente" y pueden cambiar sin aviso.
+- **Qué se midió:** 1.300 requests (~575 tokens cada una, concurrencia 40, sin reintentos) terminaron en ~11 s, todas con 200 y ningún 429. El tope de tok/s no se probó.
+- **Impacto:** el plan no cambia. El criterio de salida de la Fase 0 se evaluó contra el tope publicado (1.200 req/min), no contra el observado, porque el observado puede bajar sin aviso. Queda sin verificar si hay créditos gratuitos o un tier de prueba (la consola no se revisó).
