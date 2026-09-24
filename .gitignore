@@ -11,3 +11,6 @@ wheels/
 
 
 .env
+
+# Olist CSVs (descargar de Kaggle, ver README)
+data/
