@@ -10,7 +10,7 @@ Bonfire: a SQL-analysis agent (LangChain v1 `create_agent` over a Postgres/Olist
 
 ## Current state
 
-Early Phase 0 (probe). The only code is `main.py`, an SDK example that calls `TypeSafeClient().system_one(state=..., questions={...})` with the three primitives `Choice`, `Score`, `Noul`. The `src/`, `eval/`, `tests/` tree from `plan.md` exists as stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
+Phase 0 (probe) done: `notebooks/00_probe.ipynb` holds the measured numbers and the exit criterion passed. Phase 1 is next. Besides the notebook, the only code is `main.py`, an SDK example that calls `TypeSafeClient().system_one(state=..., questions={...})` with the three primitives `Choice`, `Score`, `Noul`. The `src/`, `eval/`, `tests/` tree from `plan.md` exists as stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
 
 ## Commands
 
@@ -18,7 +18,8 @@ Uses `uv` with Python 3.12 (`.python-version`).
 
 ```
 uv sync                 # install deps from uv.lock
-uv run python main.py   # run the Jev probe (needs TYPESAFE_API_KEY in .env, see .env.example)
+uv run python main.py   # SDK example (needs TYPESAFE_API_KEY in .env, see .env.example)
+uv run jupyter nbconvert --to notebook --execute --inplace notebooks/00_probe.ipynb   # re-run the Phase 0 probe (~1.3k Jev requests)
 ```
 
 No tests, linter, or build config yet. Per the plan, tests will live in `tests/` (`test_policy.py`, `test_sqlcheck.py`) and must run without network access.
