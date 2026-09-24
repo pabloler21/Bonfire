@@ -9,3 +9,9 @@ dependencies = [
     "langchain>=1.4.2",
     "typesafe-sdk>=0.7.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+    "nbconvert>=7.17.1",
+]
