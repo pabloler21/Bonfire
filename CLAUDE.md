@@ -17,7 +17,7 @@ It is **not** a benchmark: nothing compares Jev against an LLM or against other 
 
 ## Current state
 
-Phase 0 (Jev connection) done: `main.py` makes a real call and the API key works. Phase 1 is next. The only code is `main.py`, an SDK example that calls `TypeSafeClient().system_one(state=..., questions={...})` with the three primitives `Choice`, `Score`, `Noul`. The `src/`, `eval/`, `tests/` tree from `plan.md` exists as stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
+Phase 0 (Jev connection) done. Phase 1 in progress: Postgres with Olist runs in Docker (`docker-compose.yml`, `init.sql`) and the `bonfire_agent` permissions are verified; `sqlcheck` and `run_sql` are next. Besides `docker-compose.yml` and `init.sql`, the only code is `main.py`, an SDK example that calls `TypeSafeClient().system_one(state=..., questions={...})` with the three primitives `Choice`, `Score`, `Noul`. The `src/`, `eval/`, `tests/` tree from `plan.md` exists as stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
 
 ## Commands
 
@@ -26,7 +26,13 @@ Uses `uv` with Python 3.12 (`.python-version`).
 ```
 uv sync                 # install deps from uv.lock
 uv run python main.py   # SDK example (needs TYPESAFE_API_KEY in .env, see .env.example)
+
+docker desktop start    # start the Docker engine (Windows, Docker Desktop CLI)
+docker compose up -d --wait   # Postgres + Olist; healthy only after init.sql finishes loading
+docker compose down -v  # delete the database; next `up` reruns init.sql from scratch
 ```
+
+The Olist CSVs live in `data/olist/` (git-ignored). Download: `curl -L -o olist.zip https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce` and unzip there. License: CC BY-NC-SA 4.0. `init.sql` runs only when the data volume is empty, so after changing it run `docker compose down -v`. Passwords and the host port (`BONFIRE_DB_PORT`, default 5432) come from `.env`.
 
 No tests, linter, or build config yet. Per the plan, tests will live in `tests/` (`test_sqlcheck.py`, `test_policy.py`, `test_review_middleware.py`) and must run without network access.
 
