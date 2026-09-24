@@ -4,6 +4,8 @@
 **Applies to:** `plan.md`, revision of 2026-09-19
 **Audience:** Claude Code, before writing or changing any code.
 
+> **Superseded in part (2026-09-24).** The owner changed the design after this review: there is no Jev gate before execution, no human-approval pause, and no checkpointer. Jev makes one decision after `run_sql` runs. Items about the risk gate, `interrupt()`, `bonfire_state`, `EXPLAIN`/`COST_MAX` and the LLM-judge comparison (B2, B4, B5 in part, C1, C2, D1, M5, M6, O1) no longer apply as written. `plan.md` is the source of truth.
+
 ---
 
 ## How to read this document
@@ -651,4 +653,4 @@ Fases 7 and 8 exist to compare Jev against an LLM judge. If the goal of the proj
 - reduce Fase 8 to functional metrics: FP rate on real traffic, accuracy, turns per question, cost per question;
 - move Langfuse and SSE streaming to a v2.
 
-**Claude Code: do not apply O1. Keep Fases 7 and 8 as corrected above until the owner decides.**
+**Decided 2026-09-24 by the owner: demonstration, not benchmark.** Fase 7 and the LLM judge were removed from `plan.md`; the old Fase 8 is now Fase 7 (Validación), with one configuration. Items M6 and the comparison parts of C1 and M5 no longer apply. Langfuse and SSE stay in the plan (Fase 8).
