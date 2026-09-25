@@ -99,7 +99,21 @@ Datos de la documentación que condicionan el diseño
 
 ---
 
-## Fase 1 — Base de datos y `run_sql` 🚦
+## Fase 1 — Base de datos y `run_sql` 🚦 ✅
+
+**Hecha el 25/09/2026.** Los dos puntos del criterio de salida se verificaron
+contra la base real (`uv run python -m src.agent.tools`), y los tests pasan
+sin red (`tests/test_sqlcheck.py`, `tests/test_tools.py`). Además de lo que
+pedía esta fase, se agregó por hallazgos en pruebas contra Postgres 18.6:
+
+- `sqlcheck` también rechaza `SELECT ... INTO` (crea una tabla) y funciones
+  con efectos sobre la sesión o el servidor que el rol puede llamar:
+  `set_config` (deja la sesión sin timeout), `pg_sleep*`,
+  `pg_terminate_backend`, `pg_cancel_backend`, `pg_advisory*`;
+- `run_sql` abre una conexión nueva por llamada, así ningún cambio de sesión
+  sobrevive a la consulta siguiente;
+- los DSN usan `127.0.0.1` y no `localhost`: en Windows, `localhost` prueba
+  primero IPv6 y tarda 10 s en conectar.
 
 **Objetivo:** una base real con permisos correctos, y la única tool del agente
 con todos los chequeos deterministas. Todo lo que es seguridad se resuelve en
@@ -752,6 +766,7 @@ bonfire/
 └── tests/
     ├── test_policy.py                # todas las ramas de review_decision(); Jev simulado, sin red
     ├── test_sqlcheck.py              # sin red
+    ├── test_tools.py                 # run_sql con una conexion falsa, sin red
     └── test_review_middleware.py     # cliente de Jev mockeado
 ```
 
