@@ -17,7 +17,16 @@ It is **not** a benchmark: nothing compares Jev against an LLM or against other 
 
 ## Current state
 
-Phase 0 (Jev connection) done. Phase 1 in progress: Postgres with Olist runs in Docker (`docker-compose.yml`, `init.sql`) and the `bonfire_agent` permissions are verified; `sqlcheck` and `run_sql` are next. Besides `docker-compose.yml` and `init.sql`, the only code is `main.py`, an SDK example that calls `TypeSafeClient().system_one(state=..., questions={...})` with the three primitives `Choice`, `Score`, `Noul`. The `src/`, `eval/`, `tests/` tree from `plan.md` exists as stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
+Phases 0 and 1 done. Phase 2 (the agent with `create_agent`, still without Jev) is next.
+
+What exists:
+- `docker-compose.yml` + `init.sql`: Postgres 18.6 with Olist; `bonfire_agent` can only SELECT.
+- `src/sqlcheck.py`: `check_sql(sql) -> SqlCheck`, a sqlglot allow-list (rules R1–R5 in the file).
+- `src/agent/tools.py`: the `run_sql` tool (`response_format="content_and_artifact"`): text for the LLM, `SqlResult` artifact for the Phase 5 middleware. One new connection per call, `read_only`, 10s timeout, `fetchmany(MAX_ROWS + 1)`, Postgres errors returned as text, connection errors raised.
+- `src/models.py`: `SqlCheck`, `SqlResult`.
+- `main.py`: the TypeSafe SDK example from Phase 0.
+
+The rest of the `src/`, `eval/`, `tests/` tree from `plan.md` is still stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
 
 ## Commands
 
@@ -30,11 +39,17 @@ uv run python main.py   # SDK example (needs TYPESAFE_API_KEY in .env, see .env.
 docker desktop start    # start the Docker engine (Windows, Docker Desktop CLI)
 docker compose up -d --wait   # Postgres + Olist; healthy only after init.sql finishes loading
 docker compose down -v  # delete the database; next `up` reruns init.sql from scratch
+
+uv run pytest           # all tests, no network or database needed
+uv run pytest tests/test_sqlcheck.py -k cartesian   # one file, filtered by name
+uv run python -m src.agent.tools   # Phase 1 exit criterion against the real database
 ```
+
+Imports are rooted at the repo (`from src.sqlcheck import check_sql`); `pyproject.toml` sets `pythonpath = ["."]` for pytest. DSNs use `127.0.0.1`, not `localhost` (on Windows `localhost` tries IPv6 first and takes 10s to connect). If Docker Desktop hangs on start: kill the `com.docker.*` processes, run `wsl --shutdown`, then `docker desktop start`.
 
 The Olist CSVs live in `data/olist/` (git-ignored). Download: `curl -L -o olist.zip https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce` and unzip there. License: CC BY-NC-SA 4.0. `init.sql` runs only when the data volume is empty, so after changing it run `docker compose down -v`. Passwords and the host port (`BONFIRE_DB_PORT`, default 5432) come from `.env`.
 
-No tests, linter, or build config yet. Per the plan, tests will live in `tests/` (`test_sqlcheck.py`, `test_policy.py`, `test_review_middleware.py`) and must run without network access.
+Tests live in `tests/` and must run without network access: `test_sqlcheck.py` and `test_tools.py` (a fake psycopg connection) exist; `test_policy.py` and `test_review_middleware.py` come in Phase 5. No linter or build config.
 
 ## Rules from the plan that apply every time
 
@@ -45,6 +60,7 @@ No tests, linter, or build config yet. Per the plan, tests will live in `tests/`
 - Order is strict: commit and hash the test cases (Phase 3, tag `eval-frozen`) **before** any file exists in `src/middleware/`.
 - Phases marked 🚦 are hard gates. Don't move forward without meeting the exit criterion.
 - **Security is deterministic, never Jev.** Postgres permissions, `sqlcheck`, and the timeout are the only safety layers. Jev judges whether an allowed read query correctly answers the question. Never frame Jev as a barrier, a defense, or "protecting the database".
+- **Every `sqlcheck` rule has a test in both directions**: SQL it must reject and legitimate SQL it must let through. A false positive (a valid query rejected) makes the agent useless. When adding a rule, add both kinds of cases.
 - **Parseable problems belong to `sqlcheck`, not Jev.** Explicit cartesian products, missing join predicates, and non-SELECT statements are rejected in `run_sql` and covered by `tests/test_sqlcheck.py`. Don't add Jev questions or thresholds for them. Jev's questions and Phase 3 cases target SQL that runs fine but answers wrong.
 - Don't write probes, notebooks, or benchmarks to check whether Jev or the TypeSafe API works. `main.py` already confirmed it. Jev's behavior and performance inside the app are observed through Langfuse traces (Phase 7).
 - **That rule does not cover unit tests of our own logic. Those are required.** `policy.py` and the review middleware get tests with mocked Jev responses and no network. Examples: a trap at 0.9 → `retry` with that reason; a trap at 0.1 and `next_step = answer` → `answer`; attempt cap → stop; SQL error or zero rows → `retry` without calling Jev.
