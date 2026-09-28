@@ -24,10 +24,14 @@ What exists:
 - `src/sqlcheck.py`: `check_sql(sql) -> SqlCheck`, a sqlglot allow-list (rules R1–R5 in the file).
 - `src/agent/tools.py`: the `run_sql` tool (`response_format="content_and_artifact"`): text for the LLM, `SqlResult` artifact for the Phase 5 middleware. One new connection per call, `read_only`, 10s timeout, `fetchmany(MAX_ROWS + 1)`, Postgres errors returned as text, connection errors raised.
 - `src/models.py`: `SqlCheck`, `SqlResult`.
-- `src/agent/build.py`: `build_agent(model=None)` with `create_agent`: generator model (`openai:gpt-6-sol` by default, override with `BONFIRE_MODEL`), the `run_sql` tool, a system prompt with the schema structure only (no Olist trap hints: those are for Jev), and `ModelCallLimitMiddleware(run_limit=8, exit_behavior="end")` as the loop safety net.
+- `src/agent/build.py`: `build_agent(model=None)` with `create_agent`: generator model (`openai:gpt-5-nano` by default, the cheapest OpenAI model, chosen by the owner; override with `BONFIRE_MODEL`), the `run_sql` tool, a system prompt with the schema structure only (no Olist trap hints: those are for Jev), and `ModelCallLimitMiddleware(run_limit=8, exit_behavior="end")` as the loop safety net.
 - `src/main.py`: `ask(question)` CLI.
-- `eval/run_eval.py`: runs the agent over a questions file, grades the last successful query result, and writes traces (turns, SQL, returned model ID, tokens, latency). `eval/grading.py`: result-set comparison (Phase 6 rules). `eval/questions_dev.jsonl`: 10 dev questions. `eval/results/pilot.json`: the Phase 2 pilot, 10/10 correct.
+- `eval/run_eval.py`: runs the agent over a questions file, grades the last successful query result, and writes traces (turns, SQL, returned model ID, tokens, latency). `eval/grading.py`: result-set comparison (Phase 6 rules). `eval/questions_dev.jsonl`: 10 dev questions. `eval/results/pilot.json`: the Phase 2 pilot with `gpt-5-nano-2025-08-07`, 9/10 correct (the miss is a valid alternative reading).
 - `main.py`: the TypeSafe SDK example from Phase 0.
+
+Open items waiting on the owner before Phase 3:
+- Review the 10 dev questions in `eval/questions_dev.jsonl` (Claude wrote them; the owner reviews them).
+- Decide whether `d08` ("distinct perfumaria products sold") gets the "delivered orders only" reading as `acceptable_sql`. `gpt-5-nano` used that reading (857 vs 868) and said so. Don't change the grading of a question after seeing a result without the owner's call.
 
 The rest of the `src/`, `eval/`, `tests/` tree from `plan.md` is still stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
 
@@ -47,7 +51,7 @@ uv run pytest           # all tests, no network or database needed
 uv run pytest tests/test_sqlcheck.py -k cartesian   # one file, filtered by name
 uv run python -m src.agent.tools   # Phase 1 exit criterion against the real database
 uv run python -m src.main "How many orders are there?"   # ask the agent (needs OPENAI_API_KEY and the database)
-uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/pilot.json   # rerun the pilot (~US$0.04)
+uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/pilot.json   # rerun the pilot (~US$0.005 with gpt-5-nano)
 ```
 
 Imports are rooted at the repo (`from src.sqlcheck import check_sql`); `pyproject.toml` sets `pythonpath = ["."]` for pytest. DSNs use `127.0.0.1`, not `localhost` (on Windows `localhost` tries IPv6 first and takes 10s to connect). If Docker Desktop hangs on start: kill the `com.docker.*` processes, run `wsl --shutdown`, then `docker desktop start`.
@@ -63,6 +67,8 @@ Tests live in `tests/` and must run without network access: `test_sqlcheck.py`, 
 - Pin exact versions in `uv.lock`. Don't upgrade in the middle of a phase.
 - Record the **model version returned by the API** on every run. `jev-latest` is a moving alias. For the generator, `eval/run_eval.py` reads it from `AIMessage.response_metadata["model_name"]`.
 - Read message text with `AIMessage.text`, not `.content`: newer OpenAI models return content as a list of blocks (Responses API).
+- `gpt-5-nano` is a reasoning model: reasoning tokens are billed as output, so it spent ~11× the output tokens of `gpt-6-sol` on the pilot (still ~8× cheaper overall). When estimating cost, use measured tokens from `eval/results/`, not list prices alone. It also follows prompt instructions less reliably (it answered one English question in Portuguese).
+- Model choice is the owner's call and cost-sensitive: don't switch the default generator to a pricier model without asking.
 - Order is strict: commit and hash the test cases (Phase 3, tag `eval-frozen`) **before** any file exists in `src/middleware/`.
 - Phases marked 🚦 are hard gates. Don't move forward without meeting the exit criterion.
 - **Security is deterministic, never Jev.** Postgres permissions, `sqlcheck`, and the timeout are the only safety layers. Jev judges whether an allowed read query correctly answers the question. Never frame Jev as a barrier, a defense, or "protecting the database".
