@@ -1,16 +1,16 @@
 {
-  "date_utc": "2026-09-28T19:48:00+00:00",
+  "date_utc": "2026-09-28T20:20:36+00:00",
   "questions_file": "eval/questions_dev.jsonl",
   "models_returned": [
-    "gpt-6-sol"
+    "gpt-5-nano-2025-08-07"
   ],
   "summary": {
-    "correct": 10,
+    "correct": 9,
     "total": 10,
     "avg_turns": 2.0,
-    "avg_latency_s": 6.19,
-    "input_tokens": 14404,
-    "output_tokens": 833
+    "avg_latency_s": 8.6,
+    "input_tokens": 15991,
+    "output_tokens": 9523
   },
   "questions": [
     {
@@ -28,28 +28,28 @@
           "99441.00"
         ]
       ],
-      "latency_s": 7.39,
+      "latency_s": 7.67,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 670,
-          "output_tokens": 25,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 751,
+          "output_tokens": 223,
           "sql": [
             {
-              "query": "SELECT COUNT(*) AS total_orders FROM orders",
+              "query": "SELECT COUNT(*) AS total_orders FROM orders;",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 716,
-          "output_tokens": 20,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 797,
+          "output_tokens": 211,
           "sql": []
         }
       ],
-      "answer": "There are **99,441 orders** in total, counting all order statuses."
+      "answer": "There are 99,441 orders in total."
     },
     {
       "id": "d02",
@@ -66,12 +66,12 @@
           "625.00"
         ]
       ],
-      "latency_s": 6.76,
+      "latency_s": 5.84,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 672,
-          "output_tokens": 33,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 753,
+          "output_tokens": 294,
           "sql": [
             {
               "query": "SELECT COUNT(*) AS canceled_orders FROM orders WHERE order_status = 'canceled'",
@@ -81,13 +81,13 @@
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 726,
-          "output_tokens": 13,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 806,
+          "output_tokens": 277,
           "sql": []
         }
       ],
-      "answer": "625 orders have the status “canceled.”"
+      "answer": "Existem 625 pedidos com o status 'canceled'."
     },
     {
       "id": "d03",
@@ -104,28 +104,28 @@
           "4.09"
         ]
       ],
-      "latency_s": 4.8,
+      "latency_s": 5.27,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 677,
-          "output_tokens": 34,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 758,
+          "output_tokens": 296,
           "sql": [
             {
-              "query": "SELECT ROUND(AVG(review_score), 2) AS average_review_score FROM order_reviews",
+              "query": "SELECT ROUND(AVG(review_score), 2) AS average_review_score FROM order_reviews;",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 734,
-          "output_tokens": 18,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 815,
+          "output_tokens": 219,
           "sql": []
         }
       ],
-      "answer": "The average review score across all reviews is **4.09**."
+      "answer": "The average review score across all reviews is 4.09 (rounded to two decimals)."
     },
     {
       "id": "d04",
@@ -144,28 +144,28 @@
           "76795.00"
         ]
       ],
-      "latency_s": 5.63,
+      "latency_s": 8.12,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 678,
-          "output_tokens": 64,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 759,
+          "output_tokens": 372,
           "sql": [
             {
-              "query": "SELECT payment_type, COUNT(*) AS payment_count FROM order_payments GROUP BY payment_type ORDER BY payment_count DESC LIMIT 1",
+              "query": "SELECT payment_type, COUNT(*) AS payment_count\nFROM order_payments\nGROUP BY payment_type\nORDER BY payment_count DESC\nLIMIT 1;",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 770,
-          "output_tokens": 22,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 833,
+          "output_tokens": 543,
           "sql": []
         }
       ],
-      "answer": "Credit card is the most-used payment type, appearing in 76,795 payment records."
+      "answer": "O tipo de pagamento mais utilizado é credit_card (cartão de crédito) com 76.795 pagamentos."
     },
     {
       "id": "d05",
@@ -182,28 +182,28 @@
           "1849.00"
         ]
       ],
-      "latency_s": 5.01,
+      "latency_s": 6.29,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 676,
-          "output_tokens": 32,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 757,
+          "output_tokens": 293,
           "sql": [
             {
-              "query": "SELECT COUNT(*) AS seller_count FROM sellers WHERE seller_state = 'SP'",
+              "query": "SELECT COUNT(*) AS seller_count FROM sellers WHERE seller_state = 'SP';",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 729,
-          "output_tokens": 19,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 809,
+          "output_tokens": 280,
           "sql": []
         }
       ],
-      "answer": "There are 1,849 sellers located in São Paulo state (SP)."
+      "answer": "Há 1849 vendedores localizados no estado de São Paulo (SP)."
     },
     {
       "id": "d06",
@@ -254,28 +254,28 @@
           "5045.00"
         ]
       ],
-      "latency_s": 7.62,
+      "latency_s": 10.75,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 686,
-          "output_tokens": 61,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 767,
+          "output_tokens": 641,
           "sql": [
             {
-              "query": "SELECT c.customer_state AS state, COUNT(*) AS order_count FROM orders AS o JOIN customers AS c ON o.customer_id = c.customer_id GROUP BY c.customer_state ORDER BY order_count DESC, state ASC LIMIT 5",
+              "query": "SELECT c.customer_state, COUNT(*) AS orders_count\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nGROUP BY c.customer_state\nORDER BY orders_count DESC\nLIMIT 5;",
               "error": null,
               "row_count": 5
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 797,
-          "output_tokens": 49,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 877,
+          "output_tokens": 652,
           "sql": []
         }
       ],
-      "answer": "The five customer states with the most orders are SP (41,746), RJ (12,852), MG (11,635), RS (5,466), and PR (5,045), from most to least."
+      "answer": "Reading used: aggregate orders by customer_state (joining orders with customers) and take the top 5 by count.\n\nTop 5 states by number of orders: SP — 41,746; RJ — 12,852; MG — 11,635; RS — 5,466; PR — 5,045."
     },
     {
       "id": "d07",
@@ -292,34 +292,34 @@
           "305589.31"
         ]
       ],
-      "latency_s": 6.48,
+      "latency_s": 10.23,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 685,
-          "output_tokens": 65,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 766,
+          "output_tokens": 587,
           "sql": [
             {
-              "query": "SELECT SUM(oi.freight_value) AS total_freight_value FROM order_items oi JOIN orders o ON oi.order_id = o.order_id JOIN customers c ON o.customer_id = c.customer_id WHERE c.customer_state = 'RJ'",
+              "query": "SELECT SUM(oi.freight_value) AS total_freight_rj\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state = 'RJ';",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 776,
-          "output_tokens": 33,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 862,
+          "output_tokens": 866,
           "sql": []
         }
       ],
-      "answer": "The total freight value for all order items bought by customers in Rio de Janeiro (RJ) is **R$305,589.31**."
+      "answer": "O valor total do frete de todos os itens de pedido comprados por clientes do RJ é 305589.31."
     },
     {
       "id": "d08",
       "category": "join",
       "question": "How many distinct products from the 'perfumaria' category have been sold?",
-      "correct": true,
+      "correct": false,
       "expected": [
         [
           "868.00"
@@ -327,31 +327,31 @@
       ],
       "actual": [
         [
-          "868.00"
+          "857.00"
         ]
       ],
-      "latency_s": 7.01,
+      "latency_s": 10.3,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 678,
-          "output_tokens": 95,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 759,
+          "output_tokens": 729,
           "sql": [
             {
-              "query": "SELECT COUNT(DISTINCT oi.product_id) AS distinct_products_sold FROM order_items AS oi JOIN products AS p ON p.product_id = oi.product_id WHERE p.product_category_name = 'perfumaria'",
+              "query": "SELECT COUNT(DISTINCT p.product_id) AS sold_perfumaria_products\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nJOIN products p ON oi.product_id = p.product_id\nWHERE p.product_category_name = 'perfumaria'\n  AND o.order_status = 'delivered';",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 795,
-          "output_tokens": 39,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 865,
+          "output_tokens": 427,
           "sql": []
         }
       ],
-      "answer": "**868 distinct products** in the *perfumaria* category appear in order items. I’ve treated “sold” as appearing in an order, regardless of delivery status."
+      "answer": "Leitura usada: contar apenas produtos distintos da categoria perfumaria que aparecem em itens de pedidos com status \"delivered\". Resultado: 857 produtos distintos foram vendidos."
     },
     {
       "id": "d09",
@@ -368,28 +368,28 @@
           "45101.00"
         ]
       ],
-      "latency_s": 5.87,
+      "latency_s": 9.92,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 672,
-          "output_tokens": 59,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 753,
+          "output_tokens": 816,
           "sql": [
             {
-              "query": "SELECT COUNT(*) AS orders_purchased_2017 FROM orders WHERE order_purchase_timestamp >= TIMESTAMP '2017-01-01' AND order_purchase_timestamp < TIMESTAMP '2018-01-01'",
+              "query": "SELECT COUNT(*) AS total_orders_2017 FROM orders WHERE EXTRACT(YEAR FROM order_purchase_timestamp) = 2017;",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 756,
-          "output_tokens": 21,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 819,
+          "output_tokens": 427,
           "sql": []
         }
       ],
-      "answer": "45,101 orders were purchased in 2017, based on their purchase timestamps."
+      "answer": "Leitura usada: contar apenas os pedidos cuja data de compra (order_purchase_timestamp) esteja em 2017. Em 2017 houve 45.101 pedidos."
     },
     {
       "id": "d10",
@@ -408,28 +408,28 @@
           "7269.00"
         ]
       ],
-      "latency_s": 5.33,
+      "latency_s": 11.58,
       "turns": [
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 690,
-          "output_tokens": 104,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 771,
+          "output_tokens": 956,
           "sql": [
             {
-              "query": "SELECT EXTRACT(MONTH FROM order_purchase_timestamp)::int AS month, COUNT(*) AS orders_purchased FROM orders WHERE order_purchase_timestamp >= TIMESTAMP '2018-01-01' AND order_purchase_timestamp < TIMESTAMP '2019-01-01' GROUP BY 1 ORDER BY orders_purchased DESC, month ASC LIMIT 1",
+              "query": "SELECT month, count\nFROM (\n  SELECT EXTRACT(MONTH FROM order_purchase_timestamp)::int AS month,\n         COUNT(*) AS count\n  FROM orders\n  WHERE order_purchase_timestamp >= TIMESTAMP '2018-01-01 00:00:00'\n    AND order_purchase_timestamp < TIMESTAMP '2019-01-01 00:00:00'\n  GROUP BY month\n) AS t\nORDER BY count DESC, month ASC\nLIMIT 1;",
               "error": null,
               "row_count": 1
             }
           ]
         },
         {
-          "model": "gpt-6-sol",
-          "input_tokens": 821,
-          "output_tokens": 27,
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 914,
+          "output_tokens": 414,
           "sql": []
         }
       ],
-      "answer": "January (month 1) had the most orders purchased in 2018, with 7,269 orders."
+      "answer": "Month 1 (January) had the most orders in 2018, with 7269 orders."
     }
   ]
 }
