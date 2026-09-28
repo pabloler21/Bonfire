@@ -10,9 +10,10 @@ from langchain_core.language_models import BaseChatModel
 
 from src.agent.tools import MAX_ROWS, run_sql
 
-# Modelo generador (el que escribe el SQL). Se cambia con BONFIRE_MODEL en .env, p. ej. "openai:gpt-6-luna".
+# Modelo generador (el que escribe el SQL): el más barato de OpenAI al 28/09/2026 (US$0.05 / US$0.40 por Mtok,
+# https://developers.openai.com/api/docs/pricing). Se cambia con BONFIRE_MODEL en .env, p. ej. "openai:gpt-6-sol".
 # Formato "proveedor:modelo" de LangChain; el ID que devuelve la API se registra en cada corrida (eval/run_eval.py).
-DEFAULT_MODEL = "openai:gpt-6-sol"
+DEFAULT_MODEL = "openai:gpt-5-nano"
 
 # Red de seguridad contra loops: después de tantas llamadas al modelo, el agente termina (exit_behavior="end").
 # El tope real de intentos lo pone el código de la Fase 5 (policy.py, MAX_ATTEMPTS).
