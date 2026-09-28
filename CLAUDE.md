@@ -17,13 +17,16 @@ It is **not** a benchmark: nothing compares Jev against an LLM or against other 
 
 ## Current state
 
-Phases 0 and 1 done. Phase 2 (the agent with `create_agent`, still without Jev) is next.
+Phases 0, 1 and 2 done. Phase 3 (the frozen test cases, labels approved by the owner) is next.
 
 What exists:
 - `docker-compose.yml` + `init.sql`: Postgres 18.6 with Olist; `bonfire_agent` can only SELECT.
 - `src/sqlcheck.py`: `check_sql(sql) -> SqlCheck`, a sqlglot allow-list (rules R1–R5 in the file).
 - `src/agent/tools.py`: the `run_sql` tool (`response_format="content_and_artifact"`): text for the LLM, `SqlResult` artifact for the Phase 5 middleware. One new connection per call, `read_only`, 10s timeout, `fetchmany(MAX_ROWS + 1)`, Postgres errors returned as text, connection errors raised.
 - `src/models.py`: `SqlCheck`, `SqlResult`.
+- `src/agent/build.py`: `build_agent(model=None)` with `create_agent`: generator model (`openai:gpt-6-sol` by default, override with `BONFIRE_MODEL`), the `run_sql` tool, a system prompt with the schema structure only (no Olist trap hints: those are for Jev), and `ModelCallLimitMiddleware(run_limit=8, exit_behavior="end")` as the loop safety net.
+- `src/main.py`: `ask(question)` CLI.
+- `eval/run_eval.py`: runs the agent over a questions file, grades the last successful query result, and writes traces (turns, SQL, returned model ID, tokens, latency). `eval/grading.py`: result-set comparison (Phase 6 rules). `eval/questions_dev.jsonl`: 10 dev questions. `eval/results/pilot.json`: the Phase 2 pilot, 10/10 correct.
 - `main.py`: the TypeSafe SDK example from Phase 0.
 
 The rest of the `src/`, `eval/`, `tests/` tree from `plan.md` is still stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
@@ -43,20 +46,23 @@ docker compose down -v  # delete the database; next `up` reruns init.sql from sc
 uv run pytest           # all tests, no network or database needed
 uv run pytest tests/test_sqlcheck.py -k cartesian   # one file, filtered by name
 uv run python -m src.agent.tools   # Phase 1 exit criterion against the real database
+uv run python -m src.main "How many orders are there?"   # ask the agent (needs OPENAI_API_KEY and the database)
+uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/pilot.json   # rerun the pilot (~US$0.04)
 ```
 
 Imports are rooted at the repo (`from src.sqlcheck import check_sql`); `pyproject.toml` sets `pythonpath = ["."]` for pytest. DSNs use `127.0.0.1`, not `localhost` (on Windows `localhost` tries IPv6 first and takes 10s to connect). If Docker Desktop hangs on start: kill the `com.docker.*` processes, run `wsl --shutdown`, then `docker desktop start`.
 
-The Olist CSVs live in `data/olist/` (git-ignored). Download: `curl -L -o olist.zip https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce` and unzip there. License: CC BY-NC-SA 4.0. `init.sql` runs only when the data volume is empty, so after changing it run `docker compose down -v`. Passwords and the host port (`BONFIRE_DB_PORT`, default 5432) come from `.env`.
+The Olist CSVs live in `data/olist/` (git-ignored). Download: `curl -L -o olist.zip https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce` and unzip there. License: CC BY-NC-SA 4.0. `init.sql` runs only when the data volume is empty, so after changing it run `docker compose down -v`. Passwords and the host port (`BONFIRE_DB_PORT`, default 5432) come from `.env`, as do `OPENAI_API_KEY` (the generator) and the optional `BONFIRE_MODEL`.
 
-Tests live in `tests/` and must run without network access: `test_sqlcheck.py` and `test_tools.py` (a fake psycopg connection) exist; `test_policy.py` and `test_review_middleware.py` come in Phase 5. No linter or build config.
+Tests live in `tests/` and must run without network access: `test_sqlcheck.py`, `test_tools.py` (a fake psycopg connection), `test_agent.py` (a scripted fake chat model plus the fake connection) and `test_grading.py` exist; `test_policy.py` and `test_review_middleware.py` come in Phase 5. To test agent wiring, subclass `GenericFakeChatModel` with a no-op `bind_tools` and yield a new `AIMessage` per turn (LangGraph merges messages by id, so reusing one object collapses the turns). No linter or build config.
 
 ## Rules from the plan that apply every time
 
 - **Fast-moving dependencies:** `langchain` v1 (`create_react_agent` is gone; legacy code lives in `langchain-classic`) and `typesafe-sdk`/Jev (released 2026-09-15). Before writing code against either, read the live docs linked in that phase of `plan.md` (Context7 or https://docs.langchain.com/llms.txt). Don't write signatures from memory.
 - If the docs contradict the plan, the docs win. Log the discrepancy with a date in `NOTES.md`.
 - Pin exact versions in `uv.lock`. Don't upgrade in the middle of a phase.
-- Record the **model version returned by the API** on every run. `jev-latest` is a moving alias.
+- Record the **model version returned by the API** on every run. `jev-latest` is a moving alias. For the generator, `eval/run_eval.py` reads it from `AIMessage.response_metadata["model_name"]`.
+- Read message text with `AIMessage.text`, not `.content`: newer OpenAI models return content as a list of blocks (Responses API).
 - Order is strict: commit and hash the test cases (Phase 3, tag `eval-frozen`) **before** any file exists in `src/middleware/`.
 - Phases marked 🚦 are hard gates. Don't move forward without meeting the exit criterion.
 - **Security is deterministic, never Jev.** Postgres permissions, `sqlcheck`, and the timeout are the only safety layers. Jev judges whether an allowed read query correctly answers the question. Never frame Jev as a barrier, a defense, or "protecting the database".
