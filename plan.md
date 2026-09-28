@@ -211,7 +211,25 @@ esta fase, sin Jev.
 
 ---
 
-## Fase 2 — Agente funcionando, todavía sin Jev
+## Fase 2 — Agente funcionando, todavía sin Jev ✅
+
+**Hecha el 28/09/2026.** Piloto: **10/10 correctas** sobre `eval/questions_dev.jsonl`,
+2 vueltas y 6,2 s de promedio por pregunta, 14.404 tokens de entrada y 833 de
+salida en total (≈ US$0,04 con `gpt-6-sol`). Resultados en
+`eval/results/pilot.json`. Decisiones:
+
+- generador: **OpenAI `gpt-6-sol`** (elegido por el owner; se cambia con
+  `BONFIRE_MODEL`). Precio verificado en
+  <https://developers.openai.com/api/docs/pricing> el 28/09/2026: US$2 / US$10
+  por Mtok de entrada / salida;
+- límite de iteraciones: `ModelCallLimitMiddleware(run_limit=8)` (ver
+  `NOTES.md`, 28/09/2026);
+- el system prompt lleva solo la **estructura** del esquema (columnas, claves,
+  valores de `order_status` y `payment_type`), sin notas sobre las trampas de
+  Olist: esas son para Jev;
+- `eval/grading.py` (reglas de la Fase 6) se adelantó porque el piloto lo
+  necesita para calificar.
+
 
 **Objetivo:** tener el agente respondiendo preguntas de punta a punta antes de
 agregarle el middleware. Sirve para detectar problemas del prompt o de la tool
@@ -767,6 +785,8 @@ bonfire/
     ├── test_policy.py                # todas las ramas de review_decision(); Jev simulado, sin red
     ├── test_sqlcheck.py              # sin red
     ├── test_tools.py                 # run_sql con una conexion falsa, sin red
+    ├── test_agent.py                 # el agente con un LLM guionado y base falsa, sin red
+    ├── test_grading.py               # comparador de result sets, sin red
     └── test_review_middleware.py     # cliente de Jev mockeado
 ```
 
