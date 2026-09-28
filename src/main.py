@@ -11,7 +11,8 @@ from src.agent.build import build_agent
 
 
 def ask(question: str) -> str:
-    result = build_agent().invoke({"messages": [{"role": "user", "content": question}]})
+    agent = build_agent()
+    result = agent.invoke({"messages": [{"role": "user", "content": question}]})
     return result["messages"][-1].text  # .text: el contenido puede venir como lista de bloques (Responses API)
 
 
