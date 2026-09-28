@@ -213,15 +213,19 @@ esta fase, sin Jev.
 
 ## Fase 2 — Agente funcionando, todavía sin Jev ✅
 
-**Hecha el 28/09/2026.** Piloto: **10/10 correctas** sobre `eval/questions_dev.jsonl`,
-2 vueltas y 6,2 s de promedio por pregunta, 14.404 tokens de entrada y 833 de
-salida en total (≈ US$0,04 con `gpt-6-sol`). Resultados en
-`eval/results/pilot.json`. Decisiones:
+**Hecha el 28/09/2026.** Piloto con `gpt-5-nano-2025-08-07`: **9/10 correctas**
+sobre `eval/questions_dev.jsonl`, 2 vueltas y 8,6 s de promedio por pregunta,
+15.991 tokens de entrada y 9.523 de salida (≈ US$0,005). Resultados en
+`eval/results/pilot.json`. La única "incorrecta" (`d08`) es otra lectura válida:
+contó solo pedidos entregados (857 en vez de 868) y lo dijo. Respondió en
+portugués a una pregunta en inglés. Decisiones:
 
-- generador: **OpenAI `gpt-6-sol`** (elegido por el owner; se cambia con
-  `BONFIRE_MODEL`). Precio verificado en
-  <https://developers.openai.com/api/docs/pricing> el 28/09/2026: US$2 / US$10
-  por Mtok de entrada / salida;
+- generador: **OpenAI `gpt-5-nano`**, el más barato de la lista (decisión del
+  owner; se cambia con `BONFIRE_MODEL`). Precio verificado en
+  <https://developers.openai.com/api/docs/pricing> el 28/09/2026: US$0,05 /
+  US$0,40 por Mtok de entrada / salida. Es un modelo de razonamiento: los
+  tokens de razonamiento se cobran como salida, por eso la salida es ~11×
+  la de `gpt-6-sol`. Con `gpt-6-sol` el mismo piloto dio 10/10 por ≈ US$0,04;
 - límite de iteraciones: `ModelCallLimitMiddleware(run_limit=8)` (ver
   `NOTES.md`, 28/09/2026);
 - el system prompt lleva solo la **estructura** del esquema (columnas, claves,
