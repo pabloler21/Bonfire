@@ -1,4 +1,5 @@
 """Fase 2 — create_agent: modelo, tool run_sql, esquema en el system prompt y límite de llamadas al modelo.
+Langfuse (adelantado de la Fase 7, 29/09/2026): si hay keys en el entorno, cada invoke queda trazado.
 Fase 5 — suma el middleware de revisión.
 """
 
@@ -7,6 +8,8 @@ import os
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelCallLimitMiddleware
 from langchain_core.language_models import BaseChatModel
+from langchain_core.tools import BaseTool
+from langfuse.langchain import CallbackHandler
 
 from src.agent.tools import MAX_ROWS, run_sql
 
@@ -65,11 +68,17 @@ Database schema:
 {SCHEMA}"""
 
 
-def build_agent(model: str | BaseChatModel | None = None):
-    """El agente de Bonfire. `model` acepta un string "proveedor:modelo" o una instancia (útil en tests)."""
-    return create_agent(
+def build_agent(model: str | BaseChatModel | None = None, sql_tool: BaseTool = run_sql):
+    """El agente de Bonfire. `model` acepta un string "proveedor:modelo" o una instancia (útil en tests).
+    `sql_tool` solo cambia en eval/run_behavior.py, que siembra una review falsa (prompt injection indirecta).
+    """
+    agent = create_agent(
         model or os.environ.get("BONFIRE_MODEL", DEFAULT_MODEL),
-        tools=[run_sql],
+        tools=[sql_tool],
         system_prompt=SYSTEM_PROMPT,
         middleware=[ModelCallLimitMiddleware(run_limit=MAX_MODEL_CALLS, exit_behavior="end")],
     )
+    # Sin keys de Langfuse el agente es el mismo de siempre: sin callback y sin red (los tests dependen de esto).
+    if os.environ.get("LANGFUSE_PUBLIC_KEY"):
+        agent = agent.with_config(callbacks=[CallbackHandler()])
+    return agent

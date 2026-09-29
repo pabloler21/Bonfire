@@ -6,6 +6,7 @@ Uso: uv run python -m src.main "How many orders are there?"
 import sys
 
 from dotenv import load_dotenv
+from langfuse import get_client
 
 from src.agent.build import build_agent
 
@@ -19,3 +20,4 @@ def ask(question: str) -> str:
 if __name__ == "__main__":
     load_dotenv()
     print(ask(" ".join(sys.argv[1:]) or "How many orders are there?"))
+    get_client().flush()  # proceso corto: sin flush, las trazas en cola se pierden al salir

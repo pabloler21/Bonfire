@@ -12,6 +12,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, ToolMessage
+from langfuse import get_client
 
 from eval.grading import normalize, same_result
 from src.agent.build import build_agent
@@ -101,3 +102,4 @@ if __name__ == "__main__":
     load_dotenv()
     report = run(sys.argv[1], sys.argv[2])
     print(json.dumps(report["summary"], indent=2))
+    get_client().flush()  # proceso corto: sin flush, las trazas en cola se pierden al salir

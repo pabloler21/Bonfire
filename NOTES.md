@@ -38,3 +38,13 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué pasó:** con `openai:gpt-6-sol` (langchain-openai 1.6.6) la respuesta final llega como `[{"type": "text", "text": "...", ...}]`, no como `str`. Es el formato de la Responses API.
 - **Versión aplicada:** leer la respuesta con `AIMessage.text` (property en langchain-core 1.x), que concatena el texto de los bloques y también funciona con `str`. `src/main.py` y `eval/run_eval.py`.
 
+## 2026-09-29 — Langfuse se adelanta de la Fase 7 (decisión del owner)
+
+- **Links:**
+  - <https://langfuse.com/integrations/frameworks/langchain>
+  - <https://langfuse.com/docs/evaluation/experiments/experiments-via-sdk>
+- **Qué decía el plan:** Langfuse entra en la Fase 7, junto con la API.
+- **Qué se hizo:** Langfuse Cloud desde ahora (langfuse 4.15.6). `build_agent()` agrega `CallbackHandler()` con `with_config` si hay `LANGFUSE_PUBLIC_KEY`; sin la key no hay callback ni red. Suma la suite de comportamiento del generador (`eval/behavior_dev.jsonl`, `eval/run_behavior.py`) como experimento de Langfuse con datos locales. Spec: `docs/superpowers/specs/2026-09-29-langfuse-behavior-suite-design.md`.
+- **Qué dice la documentación (SDK 4.x):** el handler ya no acepta `update_trace` (tira `TypeError`); los atributos de traza van con `propagate_attributes()`. Los experimentos con datos locales aparecen en *Experiments* sin dataset hosteado. En el código instalado, `run_experiment` llama a una `task` sincrónica directamente dentro del loop async, así que las tasks sync corren de a una.
+- **La Fase 7 sigue:** API y `@observe` sobre la request a Jev (Fase 5), que no pasa por LangChain.
+

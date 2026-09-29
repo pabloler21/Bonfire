@@ -5,6 +5,7 @@ from itertools import count
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, ToolMessage
+from langfuse.langchain import CallbackHandler
 
 from src.agent import build, tools
 from src.models import SqlResult
@@ -24,6 +25,7 @@ def sql_call(query: str, call_id: str = "call_1") -> AIMessage:
 
 @pytest.fixture(autouse=True)
 def fake_db(monkeypatch):
+    monkeypatch.delenv("LANGFUSE_PUBLIC_KEY", raising=False)  # sin keys: sin trazas, sin red
     monkeypatch.setenv("AGENT_DSN", "postgresql://fake")
     monkeypatch.setattr(tools.psycopg, "connect", lambda dsn, **kw: FakeConnection(rows=[(99441,)], columns=("count",)))
 
@@ -56,3 +58,16 @@ def test_model_call_limit_stops_a_runaway_loop():
 
     model_calls = [m for m in result["messages"] if isinstance(m, AIMessage) and m.tool_calls]
     assert len(model_calls) == build.MAX_MODEL_CALLS
+
+
+def test_no_langfuse_keys_means_no_callbacks():
+    agent = build.build_agent(ScriptedModel(messages=iter([])))
+    assert not (agent.config or {}).get("callbacks")
+
+
+def test_langfuse_keys_attach_the_callback(monkeypatch):
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-lf-test")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-lf-test")
+    monkeypatch.setenv("LANGFUSE_TRACING_ENABLED", "false")  # el cliente usa un NoOpTracer: nada sale a la red
+    agent = build.build_agent(ScriptedModel(messages=iter([])))
+    assert [type(c) for c in agent.config["callbacks"]] == [CallbackHandler]
