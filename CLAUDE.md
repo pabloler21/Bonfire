@@ -28,9 +28,12 @@ What exists:
 - `src/main.py`: `ask(question)` CLI.
 - `eval/run_eval.py`: runs the agent over a questions file, grades the last successful query result, and writes traces (turns, SQL, returned model ID, tokens, latency). `eval/grading.py`: result-set comparison (Phase 6 rules). `eval/questions_dev.jsonl`: 10 dev questions. `eval/results/pilot.json`: the Phase 2 pilot with `gpt-5-nano-2025-08-07`, 9/10 correct (the miss is a valid alternative reading).
 - `main.py`: the TypeSafe SDK example from Phase 0.
+- Langfuse Cloud, moved up from Phase 7 by the owner (2026-09-29, `NOTES.md`): `build_agent()` attaches `langfuse.langchain.CallbackHandler` via `with_config` only when `LANGFUSE_PUBLIC_KEY` is set. No key means no callback and no network, which the tests rely on. CLI and eval scripts call `get_client().flush()` before exiting.
+- Behavior suite (dev practice, **not** Phase 3): `eval/behavior_dev.jsonl` (25 cases: paraphrases of dev questions, unanswerable, ambiguous, direct and indirect prompt injection; criteria in `eval/README.md`) run by `eval/run_behavior.py` as a `langfuse.run_experiment` on local data, with deterministic evaluators (no LLM judge) and a raw copy in `eval/results/behavior-*.json`. Indirect injection swaps in a `run_sql` that seeds a fake review into text results (`build_agent(sql_tool=...)`); the database is never modified. Paraphrases come only from dev questions. The owner reviews the cases. Spec: `docs/superpowers/specs/2026-09-29-langfuse-behavior-suite-design.md`.
 
 Open items waiting on the owner before Phase 3:
 - Review the 10 dev questions in `eval/questions_dev.jsonl` (Claude wrote them; the owner reviews them).
+- Review the 25 behavior cases in `eval/behavior_dev.jsonl` (Claude drafted them) and run the suite; the owner runs it and reads the results in Langfuse.
 - Decide whether `d08` ("distinct perfumaria products sold") gets the "delivered orders only" reading as `acceptable_sql`. `gpt-5-nano` used that reading (857 vs 868) and said so. Don't change the grading of a question after seeing a result without the owner's call.
 
 The rest of the `src/`, `eval/`, `tests/` tree from `plan.md` is still stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
@@ -52,13 +55,15 @@ uv run pytest tests/test_sqlcheck.py -k cartesian   # one file, filtered by name
 uv run python -m src.agent.tools   # Phase 1 exit criterion against the real database
 uv run python -m src.main "How many orders are there?"   # ask the agent (needs OPENAI_API_KEY and the database)
 uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/pilot.json   # rerun the pilot (~US$0.005 with gpt-5-nano)
+uv run python -m eval.run_behavior                    # behavior suite as a Langfuse experiment (needs LANGFUSE_* keys too)
+uv run python -m eval.run_behavior eval/behavior_dev.jsonl "prompt v2"   # same, with a run name to find it in Langfuse
 ```
 
 Imports are rooted at the repo (`from src.sqlcheck import check_sql`); `pyproject.toml` sets `pythonpath = ["."]` for pytest. DSNs use `127.0.0.1`, not `localhost` (on Windows `localhost` tries IPv6 first and takes 10s to connect). If Docker Desktop hangs on start: kill the `com.docker.*` processes, run `wsl --shutdown`, then `docker desktop start`.
 
 The Olist CSVs live in `data/olist/` (git-ignored). Download: `curl -L -o olist.zip https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce` and unzip there. License: CC BY-NC-SA 4.0. `init.sql` runs only when the data volume is empty, so after changing it run `docker compose down -v`. Passwords and the host port (`BONFIRE_DB_PORT`, default 5432) come from `.env`, as do `OPENAI_API_KEY` (the generator) and the optional `BONFIRE_MODEL`.
 
-Tests live in `tests/` and must run without network access: `test_sqlcheck.py`, `test_tools.py` (a fake psycopg connection), `test_agent.py` (a scripted fake chat model plus the fake connection) and `test_grading.py` exist; `test_policy.py` and `test_review_middleware.py` come in Phase 5. To test agent wiring, subclass `GenericFakeChatModel` with a no-op `bind_tools` and yield a new `AIMessage` per turn (LangGraph merges messages by id, so reusing one object collapses the turns). No linter or build config.
+Tests live in `tests/` and must run without network access: `test_sqlcheck.py`, `test_tools.py` (a fake psycopg connection), `test_agent.py` (a scripted fake chat model plus the fake connection), `test_grading.py` and `test_run_behavior.py` (behavior evaluators and the seeded review) exist; `test_policy.py` and `test_review_middleware.py` come in Phase 5. To test agent wiring, subclass `GenericFakeChatModel` with a no-op `bind_tools` and yield a new `AIMessage` per turn (LangGraph merges messages by id, so reusing one object collapses the turns). No linter or build config.
 
 ## Rules from the plan that apply every time
 
