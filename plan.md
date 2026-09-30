@@ -753,9 +753,14 @@ bonfire/
 ├── init.sql                          # base olist, roles bonfire_agent y bonfire_admin, settings por rol
 ├── pyproject.toml / uv.lock          # versiones FIJADAS
 ├── .env.example                      # AGENT_DSN, ADMIN_DSN, TYPESAFE_API_KEY
+├── bonfire.toml                      # config del agente: modelo, max_model_calls, ruta del system prompt (29/09/2026)
+│
+├── prompt/
+│   └── sql_agent.md                  # system prompt del generador (29/09/2026)
 │
 ├── src/
 │   ├── main.py                       # entry point: pregunta -> respuesta
+│   ├── config.py                     # carga bonfire.toml y completa los prompts
 │   ├── models.py                     # SqlCheck, SqlResult, ReviewVerdict, NextAction
 │   ├── policy.py                     # review_decision(); codigo puro
 │   ├── sqlcheck.py                   # allow-list con sqlglot
