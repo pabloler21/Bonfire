@@ -1,0 +1,12 @@
+# Configuración del agente de Bonfire. Va a git: así se sabe con qué configuración corrió cada experimento.
+# La carga y valida src/config.py; un campo mal escrito falla al arrancar.
+
+[agent]
+# Modelo generador (el que escribe el SQL), en formato "proveedor:modelo" de LangChain.
+# El más barato de OpenAI al 28/09/2026 (US$0.05 / US$0.40 por Mtok, https://developers.openai.com/api/docs/pricing).
+# BONFIRE_MODEL en .env lo pisa, p. ej. "openai:gpt-6-sol". El ID que devuelve la API se registra en cada corrida.
+model = "openai:gpt-5-nano"
+
+# Red de seguridad contra loops: después de tantas llamadas al modelo, el agente termina (exit_behavior="end").
+# El tope real de intentos lo pone el código de la Fase 5 (policy.py, MAX_ATTEMPTS).
+max_model_calls = 8

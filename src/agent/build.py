@@ -12,15 +12,7 @@ from langchain_core.tools import BaseTool
 from langfuse.langchain import CallbackHandler
 
 from src.agent.tools import MAX_ROWS, run_sql
-
-# Modelo generador (el que escribe el SQL): el más barato de OpenAI al 28/09/2026 (US$0.05 / US$0.40 por Mtok,
-# https://developers.openai.com/api/docs/pricing). Se cambia con BONFIRE_MODEL en .env, p. ej. "openai:gpt-6-sol".
-# Formato "proveedor:modelo" de LangChain; el ID que devuelve la API se registra en cada corrida (eval/run_eval.py).
-DEFAULT_MODEL = "openai:gpt-5-nano"
-
-# Red de seguridad contra loops: después de tantas llamadas al modelo, el agente termina (exit_behavior="end").
-# El tope real de intentos lo pone el código de la Fase 5 (policy.py, MAX_ATTEMPTS).
-MAX_MODEL_CALLS = 8
+from src.config import generator_model, settings
 
 # Esquema leído de la base real (information_schema y pg_constraint, 28/09/2026). Solo estructura:
 # las notas sobre trampas de Olist (customer_id por pedido, joins que duplican filas) son para Jev (Fase 4),
@@ -73,10 +65,10 @@ def build_agent(model: str | BaseChatModel | None = None, sql_tool: BaseTool = r
     `sql_tool` solo cambia en eval/run_behavior.py, que siembra una review falsa (prompt injection indirecta).
     """
     agent = create_agent(
-        model or os.environ.get("BONFIRE_MODEL", DEFAULT_MODEL),
+        model or generator_model(),  # modelo y límite: bonfire.toml
         tools=[sql_tool],
         system_prompt=SYSTEM_PROMPT,
-        middleware=[ModelCallLimitMiddleware(run_limit=MAX_MODEL_CALLS, exit_behavior="end")],
+        middleware=[ModelCallLimitMiddleware(run_limit=settings.agent.max_model_calls, exit_behavior="end")],
     )
     # Sin keys de Langfuse el agente es el mismo de siempre: sin callback y sin red (los tests dependen de esto).
     if os.environ.get("LANGFUSE_PUBLIC_KEY"):

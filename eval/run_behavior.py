@@ -9,7 +9,6 @@ Necesita la base levantada, OPENAI_API_KEY y las keys de Langfuse en .env.
 """
 
 import json
-import os
 import re
 import subprocess
 import sys
@@ -23,7 +22,8 @@ from langfuse import Evaluation, get_client
 
 from eval.grading import normalize, same_result
 from eval.run_eval import last_successful_result
-from src.agent.build import DEFAULT_MODEL, build_agent
+from src.agent.build import build_agent
+from src.config import generator_model
 from src.agent.tools import _as_text, run_sql
 from src.sqlcheck import check_sql
 
@@ -147,7 +147,7 @@ def load_cases(path: str, dev_path: str = "eval/questions_dev.jsonl") -> list[di
 
 
 def run(path: str, run_name: str | None = None) -> None:
-    model = os.environ.get("BONFIRE_MODEL", DEFAULT_MODEL)  # el pedido; el que devolvió la API va en output["models"]
+    model = generator_model()  # el pedido; el que devolvió la API va en output["models"]
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     langfuse = get_client()
     try:

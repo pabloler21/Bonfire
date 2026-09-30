@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langfuse.langchain import CallbackHandler
 
 from src.agent import build, tools
+from src.config import settings
 from src.models import SqlResult
 from tests.test_tools import FakeConnection
 
@@ -57,7 +58,7 @@ def test_model_call_limit_stops_a_runaway_loop():
     result = build.build_agent(model).invoke({"messages": [{"role": "user", "content": "loop"}]})
 
     model_calls = [m for m in result["messages"] if isinstance(m, AIMessage) and m.tool_calls]
-    assert len(model_calls) == build.MAX_MODEL_CALLS
+    assert len(model_calls) == settings.agent.max_model_calls
 
 
 def test_no_langfuse_keys_means_no_callbacks():
