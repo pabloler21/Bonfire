@@ -22,8 +22,8 @@ from langfuse import Evaluation, get_client
 
 from eval.grading import normalize, same_result
 from eval.run_eval import last_successful_result
-from src.agent.build import build_agent
-from src.config import generator_model
+from src.agent.build import SYSTEM_PROMPT, build_agent
+from src.config import generator_model, prompt_sha, settings
 from src.agent.tools import _as_text, run_sql
 from src.sqlcheck import check_sql
 
@@ -149,6 +149,14 @@ def load_cases(path: str, dev_path: str = "eval/questions_dev.jsonl") -> list[di
 def run(path: str, run_name: str | None = None) -> None:
     model = generator_model()  # el pedido; el que devolvió la API va en output["models"]
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    # Con qué corrió: el commit no alcanza si el prompt o bonfire.toml tenían cambios sin commitear.
+    run_config = {
+        "model": model,
+        "max_model_calls": str(settings.agent.max_model_calls),
+        "system_prompt": str(settings.agent.system_prompt),
+        "prompt_sha": prompt_sha(SYSTEM_PROMPT),
+        "commit": commit,
+    }
     langfuse = get_client()
     try:
         result = langfuse.run_experiment(
@@ -159,7 +167,7 @@ def run(path: str, run_name: str | None = None) -> None:
             task=task,
             evaluators=EVALUATORS,
             max_concurrency=1,  # de a un caso: barato, y el orden de las trazas es el del archivo
-            metadata={"split": "dev", "model": model, "commit": commit, "cases_file": path},
+            metadata={"split": "dev", "cases_file": path, **run_config},
         )
         print(result.format())
 
@@ -170,8 +178,7 @@ def run(path: str, run_name: str | None = None) -> None:
         report = {
             "date_utc": now.isoformat(timespec="seconds"),
             "run_name": result.run_name,
-            "model_requested": model,
-            "commit": commit,
+            **run_config,
             "cases": [
                 {
                     "id": r.item["metadata"]["id"],

@@ -15,8 +15,9 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langfuse import get_client
 
 from eval.grading import normalize, same_result
-from src.agent.build import build_agent
+from src.agent.build import SYSTEM_PROMPT, build_agent
 from src.agent.tools import run_sql
+from src.config import generator_model, prompt_sha, settings
 
 
 def trace(messages: list) -> dict:
@@ -82,7 +83,10 @@ def run(questions_path: str, out_path: str) -> dict:
     report = {
         "date_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "questions_file": questions_path,
+        "model_requested": generator_model(),
         "models_returned": models,
+        "max_model_calls": settings.agent.max_model_calls,
+        "prompt_sha": prompt_sha(SYSTEM_PROMPT),
         "summary": {
             "correct": sum(r["correct"] for r in records),
             "total": len(records),
