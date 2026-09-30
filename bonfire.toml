@@ -10,3 +10,7 @@ model = "openai:gpt-5-nano"
 # Red de seguridad contra loops: después de tantas llamadas al modelo, el agente termina (exit_behavior="end").
 # El tope real de intentos lo pone el código de la Fase 5 (policy.py, MAX_ATTEMPTS).
 max_model_calls = 8
+
+# System prompt del generador, relativo a la raíz del repo. Sus $variables las completa src/agent/build.py
+# ($max_rows = MAX_ROWS de src/agent/tools.py); un $ literal en el prompt se escribe $$.
+system_prompt = "prompt/sql_agent.md"
