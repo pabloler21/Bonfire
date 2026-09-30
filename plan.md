@@ -755,7 +755,7 @@ bonfire/
 ├── .env.example                      # AGENT_DSN, ADMIN_DSN, TYPESAFE_API_KEY
 ├── bonfire.toml                      # config del agente: modelo, max_model_calls, ruta del system prompt (29/09/2026)
 │
-├── prompt/
+├── prompts/
 │   └── sql_agent.md                  # system prompt del generador (29/09/2026)
 │
 ├── src/

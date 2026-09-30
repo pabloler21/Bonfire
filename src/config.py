@@ -1,4 +1,4 @@
-"""Configuración del agente: bonfire.toml, en la raíz del repo, y los prompts de prompt/.
+"""Configuración del agente: bonfire.toml, en la raíz del repo, y los prompts de prompts/.
 tomllib (stdlib) lee el TOML y Pydantic lo valida; los prompts se completan con string.Template.
 """
 

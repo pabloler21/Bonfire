@@ -13,4 +13,4 @@ max_model_calls = 8
 
 # System prompt del generador, relativo a la raíz del repo. Sus $variables las completa src/agent/build.py
 # ($max_rows = MAX_ROWS de src/agent/tools.py); un $ literal en el prompt se escribe $$.
-system_prompt = "prompt/sql_agent.md"
+system_prompt = "prompts/sql_agent.md"

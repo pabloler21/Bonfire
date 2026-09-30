@@ -13,7 +13,7 @@ def test_the_repo_config_loads():
 
 def test_a_misspelled_field_fails_instead_of_being_ignored(tmp_path):
     path = tmp_path / "bonfire.toml"
-    valid = '[agent]\nmodel = "openai:x"\nmax_model_calls = 8\nsystem_prompt = "prompt/sql_agent.md"\n'
+    valid = '[agent]\nmodel = "openai:x"\nmax_model_calls = 8\nsystem_prompt = "prompts/sql_agent.md"\n'
     path.write_text(valid, encoding="utf-8")
     config.load_settings(path)  # sin el error, carga: así el test de abajo falla por el typo y no por otra cosa
     path.write_text(valid + "max_model_cals = 3\n", encoding="utf-8")

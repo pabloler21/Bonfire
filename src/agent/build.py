@@ -14,7 +14,7 @@ from langfuse.langchain import CallbackHandler
 from src.agent.tools import MAX_ROWS, run_sql
 from src.config import generator_model, render_prompt, settings
 
-# El system prompt vive en prompt/sql_agent.md (ruta en bonfire.toml). El esquema que incluye se leyó de la base real
+# El system prompt vive en prompts/sql_agent.md (ruta en bonfire.toml). El esquema que incluye se leyó de la base real
 # (information_schema y pg_constraint, 28/09/2026) y es solo estructura: las notas sobre trampas de Olist
 # (customer_id por pedido, joins que duplican filas) son para Jev (Fase 4), no para el generador, así la Fase 2
 # mide al agente sin ayuda. Si el prompt cambia, revisar PROMPT_FRAGMENTS en eval/run_behavior.py.
