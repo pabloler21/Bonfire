@@ -55,3 +55,9 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué se hizo:** se borraron `run_behavior.py`, sus tests, su spec y el parámetro `sql_tool` de `build_agent()`. Los casos pasaron a `cases/cases.jsonl` con una nota `watch` por caso; `cases/README.md` explica cómo correr una ronda con `src.main` y anotar con *Annotate* (Score Config) en Langfuse. Los 3 casos de injection indirecta se descartaron porque necesitaban sembrar datos.
 - **Fuente:** <https://langfuse.com/docs/evaluation/evaluation-methods/annotation> (anotación manual y Annotation Queues, consultada el 30/09/2026).
 - **Se mantiene:** Langfuse en `build_agent()`, `bonfire.toml`, `prompts/`, y `eval/run_eval.py`, `eval/grading.py`, `eval/questions_dev.jsonl` (Fases 2 y 6 del plan).
+
+## 2026-10-01 — El agente responde siempre en inglés (decisión del owner)
+
+- **Qué decía el prompt:** "answer in the same language as the question".
+- **Qué se vio:** en la primera ronda de `cases/`, gpt-5-nano respondió en portugués a "How many orders are there?" (ya había pasado en el piloto).
+- **Qué se hizo:** `prompts/sql_agent.md` pide responder en inglés sea cual sea el idioma de la pregunta. Cambia `prompt_sha`; las trazas y corridas anteriores usan la regla vieja. Los casos en otros idiomas (`b03`, por ejemplo) ahora miden esta regla.
