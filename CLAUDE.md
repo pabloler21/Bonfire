@@ -17,7 +17,9 @@ It is **not** a benchmark: nothing compares Jev against an LLM or against other 
 
 ## Current state
 
-Phases 0, 1 and 2 done. Phase 3 (the frozen test cases, labels approved by the owner) is next.
+Phases 0, 1 and 2 done. Phase 3 (the frozen test cases, labels approved by the owner) is next, after the owner's manual review rounds (see "Next steps").
+
+Since 2026-09-29 the repo gained Langfuse tracing, `bonfire.toml` + `prompts/`, and `cases/`. **None of those changes has been run yet** (no `pytest`, no agent call, no Langfuse trace): the owner runs them. If a session starts with a failure report, these are the first suspects.
 
 What exists:
 - `docker-compose.yml` + `init.sql`: Postgres 18.6 with Olist; `bonfire_agent` can only SELECT.
@@ -34,10 +36,15 @@ What exists:
 - Langfuse Cloud, moved up from Phase 7 by the owner (2026-09-29, `NOTES.md`): `build_agent()` attaches `langfuse.langchain.CallbackHandler` via `with_config` only when `LANGFUSE_PUBLIC_KEY` is set. No key means no callback and no network, which the tests rely on. CLI and eval scripts call `get_client().flush()` before exiting.
 - `cases/`: questions the owner runs **by hand**, one at a time, with `src.main`, then reads and annotates the trace in Langfuse (Annotate button, a Score Config). `cases.jsonl` has 22 cases (paraphrases of dev questions, unanswerable, ambiguous, direct prompt injection), each with a `watch` note; `cases/README.md` explains a round. This is error analysis before Phase 3, **not** an automated suite: an automated behavior suite (`run_behavior`, evaluators, `langfuse.run_experiment`) was built on 2026-09-29 and removed on 2026-10-01 at the owner's request. Don't reintroduce automated scoring for these cases without asking. Paraphrases come only from dev questions.
 
-Open items waiting on the owner before Phase 3:
-- Review the 10 dev questions in `eval/questions_dev.jsonl` (Claude wrote them; the owner reviews them).
-- Review the cases in `cases/cases.jsonl` (Claude drafted them) and run rounds by hand, annotating in Langfuse.
-- Decide whether `d08` ("distinct perfumaria products sold") gets the "delivered orders only" reading as `acceptable_sql`. `gpt-5-nano` used that reading (857 vs 868) and said so. Don't change the grading of a question after seeing a result without the owner's call.
+Next steps, in order (all on the owner's side until step 4):
+1. Verify: `uv run pytest`, `docker compose up -d --wait`, `uv run python -m src.main "How many orders are there?"` (expects 99441 and a trace in Langfuse → Tracing).
+2. First manual round with `cases/`: create a Score Config in Langfuse (e.g. categorical `veredicto`: correcta / incorrecta / dudosa), run each case with `src.main`, annotate each trace, write down failure patterns. Add questions that hit Olist traps (e.g. "¿cuántos clientes hay?" for `customer_unique_id`, "¿cuánto se facturó?" for join fan-out): Phase 3 needs at least half of its cases from real agent mistakes (`source: agent`), and these rounds produce them.
+3. Owner decisions: review the 10 dev questions in `eval/questions_dev.jsonl` (Claude wrote them), review `cases/cases.jsonl` (Claude drafted them), and decide whether `d08` ("distinct perfumaria products sold") gets the "delivered orders only" reading as `acceptable_sql` (`gpt-5-nano` used it, 857 vs 868, and said so). Don't change the grading of a question after seeing a result without the owner's call.
+4. Phase 3 🚦 (`plan.md`): `questions_test.jsonl` (40), `cases_dev.jsonl` (20), `cases_test.jsonl` (40). Claude can draft from the owner's annotated failures; the owner approves every label; freeze with hashes and tag `eval-frozen`.
+
+Optional, offered and not yet requested: a `--case ID --round NAME` option in `src/main.py` that tags traces via `langfuse.propagate_attributes(session_id=..., tags=[case id, kind, model], metadata={"watch": ...})` so a round can be filtered in Langfuse; and updating the course artifact (below).
+
+Course for the owner: https://claude.ai/artifact/JLRB69158cxeLH5vGSTZrh ("Bonfire desde cero", 27 modules, hand-drawn SVG diagrams, full source appendix generated from the repo). Published 2026-09-30, so modules 20–21, the replication recipe (M24) and the code appendix (M25) still describe the removed automated suite instead of `cases/`.
 
 The rest of the `src/`, `eval/`, `tests/` tree from `plan.md` is still stubs: each file holds only a docstring naming its phase and job. `src/middleware/` is deliberately missing; it gets created only after Phase 3 is committed and hashed.
 
@@ -65,6 +72,13 @@ Imports are rooted at the repo (`from src.sqlcheck import check_sql`); `pyprojec
 The Olist CSVs live in `data/olist/` (git-ignored). Download: `curl -L -o olist.zip https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce` and unzip there. License: CC BY-NC-SA 4.0. `init.sql` runs only when the data volume is empty, so after changing it run `docker compose down -v`. Passwords and the host port (`BONFIRE_DB_PORT`, default 5432) come from `.env`, as do `OPENAI_API_KEY` (the generator) and the optional `BONFIRE_MODEL`.
 
 Tests live in `tests/` and must run without network access: `test_sqlcheck.py`, `test_tools.py` (a fake psycopg connection), `test_agent.py` (a scripted fake chat model plus the fake connection), `test_grading.py` and `test_config.py` (`bonfire.toml` and prompt rendering) exist; `test_policy.py` and `test_review_middleware.py` come in Phase 5. To test agent wiring, subclass `GenericFakeChatModel` with a no-op `bind_tools` and yield a new `AIMessage` per turn (LangGraph merges messages by id, so reusing one object collapses the turns). No linter or build config.
+
+## Working with the owner
+
+- This is a study project: the owner wants to understand every piece. Explain in Spanish (rioplatense), with the why, and propose a design before coding; wait for approval.
+- The owner runs tests, the agent and the eval scripts. Don't run them unless asked; say plainly what was not run.
+- When implementing: separate, focused commits, then push directly to `main`.
+- Prefer manual, inspectable workflows over automation (see `cases/`). Ask before adding automated evaluation.
 
 ## Rules from the plan that apply every time
 
