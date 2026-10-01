@@ -48,3 +48,10 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué dice la documentación (SDK 4.x):** el handler ya no acepta `update_trace` (tira `TypeError`); los atributos de traza van con `propagate_attributes()`. Los experimentos con datos locales aparecen en *Experiments* sin dataset hosteado. En el código instalado, `run_experiment` llama a una `task` sincrónica directamente dentro del loop async, así que las tasks sync corren de a una.
 - **La Fase 7 sigue:** API y `@observe` sobre la request a Jev (Fase 5), que no pasa por LangChain.
 
+## 2026-10-01 — Se quita la suite automatizada de comportamiento (decisión del owner)
+
+- **Qué había:** `eval/run_behavior.py` corría los casos de `eval/behavior_dev.jsonl` como `langfuse.run_experiment` con evaluators deterministas (29/09).
+- **Qué pidió el owner:** revisar el comportamiento del LLM a mano, caso por caso, leyendo y anotando las trazas en Langfuse (análisis de errores), y construir los golden cases a partir de lo que encuentre. Es un proyecto de estudio: la automatización le sacaba la parte de leer cada respuesta.
+- **Qué se hizo:** se borraron `run_behavior.py`, sus tests, su spec y el parámetro `sql_tool` de `build_agent()`. Los casos pasaron a `cases/cases.jsonl` con una nota `watch` por caso; `cases/README.md` explica cómo correr una ronda con `src.main` y anotar con *Annotate* (Score Config) en Langfuse. Los 3 casos de injection indirecta se descartaron porque necesitaban sembrar datos.
+- **Fuente:** <https://langfuse.com/docs/evaluation/evaluation-methods/annotation> (anotación manual y Annotation Queues, consultada el 30/09/2026).
+- **Se mantiene:** Langfuse en `build_agent()`, `bonfire.toml`, `prompts/`, y `eval/run_eval.py`, `eval/grading.py`, `eval/questions_dev.jsonl` (Fases 2 y 6 del plan).
