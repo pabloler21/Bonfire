@@ -61,3 +61,9 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué decía el prompt:** "answer in the same language as the question".
 - **Qué se vio:** en la primera ronda de `cases/`, gpt-5-nano respondió en portugués a "How many orders are there?" (ya había pasado en el piloto).
 - **Qué se hizo:** `prompts/sql_agent.md` pide responder en inglés sea cual sea el idioma de la pregunta. Cambia `prompt_sha`; las trazas y corridas anteriores usan la regla vieja. Los casos en otros idiomas (`b03`, por ejemplo) ahora miden esta regla.
+
+## 2026-10-06 — `d08`: "vendidos" son los pedidos entregados (decisión del owner)
+
+- **Qué decía la referencia:** contar los productos distintos de `perfumaria` en `order_items`, con cualquier `order_status` (868).
+- **Qué se vio:** en el piloto, gpt-5-nano filtró `order_status = 'delivered'` (857) y avisó qué lectura usaba.
+- **Qué se hizo:** el owner decidió que "vendidos" incluye solo los pedidos entregados. La referencia de `d08` en `eval/questions_dev.jsonl` es ahora la consulta del piloto, y `acceptable_sql` sigue vacío. `eval/results/pilot.json` queda como estaba: se calificó con la referencia vieja.
