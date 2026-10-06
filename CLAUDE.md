@@ -17,7 +17,7 @@ It is **not** a benchmark: nothing compares Jev against an LLM or against other 
 
 ## Current state
 
-Phases 0, 1 and 2 done. Phase 3 (the frozen test cases, labels approved by the owner) is next, after the owner's manual review rounds (see "Next steps").
+Phases 0, 1 and 2 done. Phase 3 (the frozen test cases, labels approved by the owner) is next. The manual review rounds with `cases/` are deferred (see "Next steps").
 
 Since 2026-09-29 the repo gained Langfuse tracing, `bonfire.toml` + `prompts/`, and `cases/`. **None of those changes has been run yet** (no `pytest`, no agent call, no Langfuse trace): the owner runs them. If a session starts with a failure report, these are the first suspects.
 
@@ -36,11 +36,12 @@ What exists:
 - Langfuse Cloud, moved up from Phase 7 by the owner (2026-09-29, `NOTES.md`): `build_agent()` attaches `langfuse.langchain.CallbackHandler` via `with_config` only when `LANGFUSE_PUBLIC_KEY` is set. No key means no callback and no network, which the tests rely on. CLI and eval scripts call `get_client().flush()` before exiting.
 - `cases/`: questions the owner runs **by hand**, one at a time, with `src.main`, then reads and annotates the trace in Langfuse (Annotate button, a Score Config). `cases.jsonl` has 22 cases (paraphrases of dev questions, unanswerable, ambiguous, direct prompt injection), each with a `watch` note; `cases/README.md` explains a round. This is error analysis before Phase 3, **not** an automated suite: an automated behavior suite (`run_behavior`, evaluators, `langfuse.run_experiment`) was built on 2026-09-29 and removed on 2026-10-01 at the owner's request. Don't reintroduce automated scoring for these cases without asking. Paraphrases come only from dev questions.
 
-Next steps, in order (all on the owner's side until step 4):
-1. Verify: `uv run pytest`, `docker compose up -d --wait`, `uv run python -m src.main "How many orders are there?"` (expects 99441 and a trace in Langfuse → Tracing).
-2. First manual round with `cases/`: create a Score Config in Langfuse (e.g. categorical `veredicto`: correcta / incorrecta / dudosa), run each case with `src.main`, annotate each trace, write down failure patterns. Add questions that hit Olist traps (e.g. "¿cuántos clientes hay?" for `customer_unique_id`, "¿cuánto se facturó?" for join fan-out): Phase 3 needs at least half of its cases from real agent mistakes (`source: agent`), and these rounds produce them.
-3. Owner decisions: review the 10 dev questions in `eval/questions_dev.jsonl` (Claude wrote them), review `cases/cases.jsonl` (Claude drafted them), and decide whether `d08` ("distinct perfumaria products sold") gets the "delivered orders only" reading as `acceptable_sql` (`gpt-5-nano` used it, 857 vs 868, and said so). Don't change the grading of a question after seeing a result without the owner's call.
-4. Phase 3 🚦 (`plan.md`): `questions_test.jsonl` (40), `cases_dev.jsonl` (20), `cases_test.jsonl` (40). Claude can draft from the owner's annotated failures; the owner approves every label; freeze with hashes and tag `eval-frozen`.
+Next steps, in order:
+1. Verify (owner): `uv run pytest`, `docker compose up -d --wait`, `uv run python -m src.main "How many orders are there?"` (expects 99441 and a trace in Langfuse → Tracing).
+2. Phase 3 🚦 (`plan.md`): `questions_test.jsonl` (40), `cases_dev.jsonl` (20), `cases_test.jsonl` (40). The `source: agent` cases (at least half) come from the plan's own route: run the Phase 2 agent with `eval/run_eval.py` over dev questions plus extra questions written for this (never test questions), and label each SQL that runs without error. The owner approves every label; freeze with hashes and tag `eval-frozen`.
+3. Owner decisions before freezing: review the 10 dev questions in `eval/questions_dev.jsonl` (Claude wrote them) and decide whether `d08` ("distinct perfumaria products sold") gets the "delivered orders only" reading as `acceptable_sql` (`gpt-5-nano` used it, 857 vs 868, and said so). Don't change the grading of a question after seeing a result without the owner's call.
+
+Deferred by the owner (2026-10-06), not dropped: the manual rounds with `cases/`. Create a Score Config in Langfuse (e.g. categorical `veredicto`: correcta / incorrecta / dudosa), run each case with `src.main`, annotate each trace, write down failure patterns, review `cases/cases.jsonl` (Claude drafted it). A first round was started (it produced the answer-in-English change, 7c65abf) but not finished.
 
 Optional, offered and not yet requested: a `--case ID --round NAME` option in `src/main.py` that tags traces via `langfuse.propagate_attributes(session_id=..., tags=[case id, kind, model], metadata={"watch": ...})` so a round can be filtered in Langfuse; and updating the course artifact (below).
 
