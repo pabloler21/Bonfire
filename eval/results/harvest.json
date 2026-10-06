@@ -1,0 +1,882 @@
+{
+  "date_utc": "2026-10-06T19:18:44+00:00",
+  "questions_file": "eval/questions_harvest.jsonl",
+  "model_requested": "openai:gpt-5-nano",
+  "models_returned": [
+    "gpt-5-nano-2025-08-07"
+  ],
+  "max_model_calls": 8,
+  "prompt_sha": "bec5e3601061",
+  "summary": {
+    "correct": 14,
+    "total": 22,
+    "avg_turns": 2.0,
+    "avg_latency_s": 9.91,
+    "input_tokens": 35549,
+    "output_tokens": 21760
+  },
+  "questions": [
+    {
+      "id": "h01",
+      "category": "single_table",
+      "question": "How many customers are there?",
+      "correct": false,
+      "expected": [
+        [
+          "96096.00"
+        ]
+      ],
+      "actual": [
+        [
+          "99441.00"
+        ]
+      ],
+      "latency_s": 8.78,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 751,
+          "output_tokens": 159,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS customer_count FROM customers;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 797,
+          "output_tokens": 276,
+          "sql": []
+        }
+      ],
+      "answer": "There are 99,441 customers in the database."
+    },
+    {
+      "id": "h02",
+      "category": "single_table",
+      "question": "How many customers live in the state of Minas Gerais (MG)?",
+      "correct": false,
+      "expected": [
+        [
+          "11259.00"
+        ]
+      ],
+      "actual": [
+        [
+          "11635.00"
+        ]
+      ],
+      "latency_s": 6.32,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 758,
+          "output_tokens": 230,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS mg_customers FROM customers WHERE customer_state = 'MG';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 812,
+          "output_tokens": 279,
+          "sql": []
+        }
+      ],
+      "answer": "There are 11,635 customers living in Minas Gerais (MG)."
+    },
+    {
+      "id": "h03",
+      "category": "join",
+      "question": "How many customers have placed more than one order?",
+      "correct": false,
+      "expected": [
+        [
+          "2997.00"
+        ]
+      ],
+      "actual": [
+        [
+          "0.00"
+        ]
+      ],
+      "latency_s": 8.17,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 755,
+          "output_tokens": 320,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS customers_with_more_than_one_order\nFROM (\n  SELECT customer_id\n  FROM orders\n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) AS t;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 837,
+          "output_tokens": 402,
+          "sql": []
+        }
+      ],
+      "answer": "0 customers have placed more than one order."
+    },
+    {
+      "id": "h04",
+      "category": "single_table",
+      "question": "Which 3 cities have the most customers? Give each city and its number of customers, from most to least.",
+      "correct": false,
+      "expected": [
+        [
+          "sao paulo",
+          "14984.00"
+        ],
+        [
+          "rio de janeiro",
+          "6620.00"
+        ],
+        [
+          "belo horizonte",
+          "2672.00"
+        ]
+      ],
+      "actual": [
+        [
+          "sao paulo",
+          "15540.00"
+        ],
+        [
+          "rio de janeiro",
+          "6882.00"
+        ],
+        [
+          "belo horizonte",
+          "2773.00"
+        ]
+      ],
+      "latency_s": 11.41,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 768,
+          "output_tokens": 451,
+          "sql": [
+            {
+              "query": "SELECT customer_city, COUNT(*) AS customer_count\nFROM customers\nWHERE customer_city IS NOT NULL AND customer_city <> ''\nGROUP BY customer_city\nORDER BY customer_count DESC, customer_city ASC\nLIMIT 3;",
+              "error": null,
+              "row_count": 3
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 875,
+          "output_tokens": 687,
+          "sql": []
+        }
+      ],
+      "answer": "Top 3 cities by customer count (most to least): sao paulo — 15,540; rio de janeiro — 6,882; belo horizonte — 2,773."
+    },
+    {
+      "id": "h05",
+      "category": "join",
+      "question": "What is the total of all payments (payment_value) for orders that contain at least one product from the 'beleza_saude' category, whatever the order status?",
+      "correct": true,
+      "expected": [
+        [
+          "1448729.73"
+        ]
+      ],
+      "actual": [
+        [
+          "1448729.73"
+        ]
+      ],
+      "latency_s": 14.43,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 779,
+          "output_tokens": 1261,
+          "sql": [
+            {
+              "query": "SELECT COALESCE(SUM(op.payment_value), 0) AS total_payment_value\nFROM order_payments op\nJOIN orders o ON o.order_id = op.order_id\nWHERE EXISTS (\n  SELECT 1\n  FROM order_items oi\n  JOIN products p ON oi.product_id = p.product_id\n  WHERE oi.order_id = o.order_id AND p.product_category_name = 'beleza_saude'\n);",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 907,
+          "output_tokens": 378,
+          "sql": []
+        }
+      ],
+      "answer": "Reading used: sum of payment_value from order_payments for orders that have at least one order_item whose product_category_name = 'beleza_saude', regardless of order_status. \n\nTotal payments: 1,448,729.73."
+    },
+    {
+      "id": "h06",
+      "category": "single_table",
+      "question": "Across all orders, what are the total freight value of the items and the total amount paid? Give both numbers.",
+      "correct": true,
+      "expected": [
+        [
+          "2251909.54",
+          "16008872.12"
+        ]
+      ],
+      "actual": [
+        [
+          "2251909.54",
+          "16008872.12"
+        ]
+      ],
+      "latency_s": 13.68,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 768,
+          "output_tokens": 908,
+          "sql": [
+            {
+              "query": "SELECT COALESCE((SELECT SUM(oi.freight_value) FROM order_items oi), 0) AS total_freight_value,\n       COALESCE((SELECT SUM(op.payment_value) FROM order_payments op), 0) AS total_payment_value;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 876,
+          "output_tokens": 617,
+          "sql": []
+        }
+      ],
+      "answer": "Total freight value across all orders: 2,251,909.54; Total amount paid across all orders: 16,008,872.12."
+    },
+    {
+      "id": "h07",
+      "category": "join",
+      "question": "What is the average review score of orders that include at least one product from the 'cama_mesa_banho' category? Round to two decimals.",
+      "correct": true,
+      "expected": [
+        [
+          "3.97"
+        ]
+      ],
+      "actual": [
+        [
+          "3.97"
+        ]
+      ],
+      "latency_s": 13.04,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 776,
+          "output_tokens": 1070,
+          "sql": [
+            {
+              "query": "SELECT ROUND(AVG(ro.review_score), 2) AS average_review_score\nFROM orders o\nJOIN order_reviews ro ON ro.order_id = o.order_id\nWHERE EXISTS (\n  SELECT 1\n  FROM order_items oi\n  JOIN products p ON oi.product_id = p.product_id\n  WHERE oi.order_id = o.order_id\n    AND p.product_category_name = 'cama_mesa_banho'\n);",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 903,
+          "output_tokens": 360,
+          "sql": []
+        }
+      ],
+      "answer": "Reading: average review score for orders that include at least one product from the 'cama_mesa_banho' category.\n\nAnswer: 3.97"
+    },
+    {
+      "id": "h08",
+      "category": "single_table",
+      "question": "What is the average total amount paid per order? Round to two decimals.",
+      "correct": true,
+      "expected": [
+        [
+          "160.99"
+        ]
+      ],
+      "actual": [
+        [
+          "160.99"
+        ]
+      ],
+      "latency_s": 8.39,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 760,
+          "output_tokens": 449,
+          "sql": [
+            {
+              "query": "SELECT ROUND(AVG(total_per_order), 2) AS avg_total_paid_per_order FROM ( SELECT order_id, SUM(payment_value) AS total_per_order FROM order_payments GROUP BY order_id) AS t;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 844,
+          "output_tokens": 406,
+          "sql": []
+        }
+      ],
+      "answer": "The average total amount paid per order is 160.99."
+    },
+    {
+      "id": "h09",
+      "category": "join",
+      "question": "How many orders include at least one product from the 'esporte_lazer' category?",
+      "correct": true,
+      "expected": [
+        [
+          "7720.00"
+        ]
+      ],
+      "actual": [
+        [
+          "7720.00"
+        ]
+      ],
+      "latency_s": 11.16,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 763,
+          "output_tokens": 447,
+          "sql": [
+            {
+              "query": "SELECT COUNT(DISTINCT oi.order_id) AS orders_with_sport FROM order_items oi JOIN products p ON oi.product_id = p.product_id WHERE p.product_category_name = 'esporte_lazer';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 843,
+          "output_tokens": 740,
+          "sql": []
+        }
+      ],
+      "answer": "Reading used: count of distinct orders that include at least one item in the esporte_lazer category. Result: 7720 orders."
+    },
+    {
+      "id": "h10",
+      "category": "join",
+      "question": "How many orders include at least one item from a seller located in the state of Rio de Janeiro (RJ)?",
+      "correct": true,
+      "expected": [
+        [
+          "4353.00"
+        ]
+      ],
+      "actual": [
+        [
+          "4353.00"
+        ]
+      ],
+      "latency_s": 8.97,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 767,
+          "output_tokens": 451,
+          "sql": [
+            {
+              "query": "SELECT COUNT(DISTINCT oi.order_id) AS orders_with_RJ_seller\nFROM order_items oi\nJOIN sellers s ON oi.seller_id = s.seller_id\nWHERE s.seller_state = 'RJ';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 853,
+          "output_tokens": 307,
+          "sql": []
+        }
+      ],
+      "answer": "There are 4,353 orders that include at least one item from a seller located in Rio de Janeiro (RJ). Reading used: count of distinct orders having at least one order_item from an RJ seller."
+    },
+    {
+      "id": "h11",
+      "category": "single_table",
+      "question": "How many reviews have a score of 1?",
+      "correct": false,
+      "expected": [
+        [
+          "11282.00"
+        ]
+      ],
+      "actual": [
+        [
+          "11424.00"
+        ]
+      ],
+      "latency_s": 6.24,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 755,
+          "output_tokens": 234,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS total_reviews_with_score_1 FROM order_reviews WHERE review_score = 1;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 816,
+          "output_tokens": 215,
+          "sql": []
+        }
+      ],
+      "answer": "There are 11,424 reviews with a score of 1."
+    },
+    {
+      "id": "h12",
+      "category": "time_window",
+      "question": "How many orders were delivered to the customer in 2017?",
+      "correct": true,
+      "expected": [
+        [
+          "40930.00"
+        ]
+      ],
+      "actual": [
+        [
+          "40930.00"
+        ]
+      ],
+      "latency_s": 10.38,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 758,
+          "output_tokens": 638,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS delivered_orders_2017\nFROM orders\nWHERE order_delivered_customer_date IS NOT NULL\n  AND EXTRACT(year FROM order_delivered_customer_date) = 2017;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 839,
+          "output_tokens": 368,
+          "sql": []
+        }
+      ],
+      "answer": "There were 40,930 orders delivered to customers in 2017. Reading: I counted orders where order_delivered_customer_date is not null and the delivery date falls in 2017."
+    },
+    {
+      "id": "h13",
+      "category": "time_window",
+      "question": "In which month of 2017 (as a number from 1 to 12) were the most orders delivered to customers, and how many?",
+      "correct": true,
+      "expected": [
+        [
+          "12.00",
+          "7205.00"
+        ]
+      ],
+      "actual": [
+        [
+          "12.00",
+          "7205.00"
+        ]
+      ],
+      "latency_s": 11.83,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 775,
+          "output_tokens": 860,
+          "sql": [
+            {
+              "query": "SELECT EXTRACT(MONTH FROM order_delivered_customer_date) AS month, COUNT(*) AS delivered_orders\nFROM orders\nWHERE order_delivered_customer_date IS NOT NULL\n  AND DATE_PART('year', order_delivered_customer_date) = 2017\nGROUP BY month\nORDER BY delivered_orders DESC, month ASC\nLIMIT 1;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 887,
+          "output_tokens": 480,
+          "sql": []
+        }
+      ],
+      "answer": "Month 12 (December) had the most delivered orders in 2017, with 7,205 deliveries."
+    },
+    {
+      "id": "h14",
+      "category": "time_window",
+      "question": "How many orders were approved in January 2018?",
+      "correct": false,
+      "expected": [
+        [
+          "7187.00"
+        ]
+      ],
+      "actual": [
+        [
+          "0.00"
+        ]
+      ],
+      "latency_s": 10.1,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 756,
+          "output_tokens": 720,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS approved_orders_jan2018\nFROM orders\nWHERE order_status = 'approved'\n  AND order_approved_at >= '2018-01-01'::timestamp\n  AND order_approved_at < '2018-02-01'::timestamp;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 854,
+          "output_tokens": 438,
+          "sql": []
+        }
+      ],
+      "answer": "0 orders were approved in January 2018. Reading: counted orders with order_status = 'approved' and order_approved_at between 2018-01-01 and 2018-01-31 (inclusive)."
+    },
+    {
+      "id": "h15",
+      "category": "time_window",
+      "question": "How many orders were there in the first quarter of 2018?",
+      "correct": true,
+      "expected": [
+        [
+          "21208.00"
+        ]
+      ],
+      "actual": [
+        [
+          "21208.00"
+        ]
+      ],
+      "latency_s": 6.08,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 759,
+          "output_tokens": 332,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS orders_q1_2018 FROM orders WHERE order_purchase_timestamp >= TIMESTAMP '2018-01-01 00:00:00' AND order_purchase_timestamp < TIMESTAMP '2018-04-01 00:00:00';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 854,
+          "output_tokens": 228,
+          "sql": []
+        }
+      ],
+      "answer": "There were 21,208 orders in Q1 2018 (from Jan 1 to Mar 31, 2018)."
+    },
+    {
+      "id": "h16",
+      "category": "join",
+      "question": "How many items from the 'informatica_acessorios' category were sold?",
+      "correct": true,
+      "expected": [
+        [
+          "7644.00"
+        ]
+      ],
+      "actual": [
+        [
+          "7644.00"
+        ]
+      ],
+      "latency_s": 10.84,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 761,
+          "output_tokens": 978,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS sold_items\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nJOIN products p ON oi.product_id = p.product_id\nWHERE p.product_category_name = 'informatica_acessorios'\n  AND o.order_status = 'delivered';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 858,
+          "output_tokens": 294,
+          "sql": []
+        }
+      ],
+      "answer": "I count 7,644 items sold from the 'informatica_acessorios' category (assuming \"sold\" means items in delivered orders)."
+    },
+    {
+      "id": "h17",
+      "category": "time_window",
+      "question": "What was the total sales revenue in 2017, counting item prices only (without freight)?",
+      "correct": false,
+      "expected": [
+        [
+          "5962902.01"
+        ]
+      ],
+      "actual": [
+        [
+          "6155806.98"
+        ]
+      ],
+      "latency_s": 12.71,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 764,
+          "output_tokens": 808,
+          "sql": [
+            {
+              "query": "SELECT COALESCE(SUM(oi.price), 0) AS total_revenue_2017\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE o.order_purchase_timestamp >= TIMESTAMP '2017-01-01 00:00:00' AND o.order_purchase_timestamp < TIMESTAMP '2018-01-01 00:00:00';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 890,
+          "output_tokens": 615,
+          "sql": []
+        }
+      ],
+      "answer": "The total sales revenue in 2017 (calendar year, counting item prices only and excluding freight) is 6,155,806.98."
+    },
+    {
+      "id": "h18",
+      "category": "join",
+      "question": "Which seller has sold the most items? Give the seller_id and the number of items sold.",
+      "correct": true,
+      "expected": [
+        [
+          "6560211a19b47992c3666cc44a7e94c0",
+          "1996.00"
+        ]
+      ],
+      "actual": [
+        [
+          "6560211a19b47992c3666cc44a7e94c0",
+          "1996.00"
+        ]
+      ],
+      "latency_s": 12.22,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 764,
+          "output_tokens": 912,
+          "sql": [
+            {
+              "query": "SELECT oi.seller_id, COUNT(*) AS items_sold\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_status = 'delivered'\nGROUP BY oi.seller_id\nORDER BY items_sold DESC\nLIMIT 1;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 884,
+          "output_tokens": 499,
+          "sql": []
+        }
+      ],
+      "answer": "Reading: considering only delivered orders as completed sales.\n\nTop seller: seller_id 6560211a19b47992c3666cc44a7e94c0 with 1996 items sold."
+    },
+    {
+      "id": "h19",
+      "category": "join",
+      "question": "Which product category had the highest sales revenue (sum of item prices)? Give the category and the revenue.",
+      "correct": false,
+      "expected": [
+        [
+          "health_beauty",
+          "1233131.72"
+        ]
+      ],
+      "actual": [
+        [
+          "beleza_saude",
+          "1258681.34"
+        ]
+      ],
+      "latency_s": 9.17,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 766,
+          "output_tokens": 521,
+          "sql": [
+            {
+              "query": "SELECT p.product_category_name, SUM(oi.price) AS total_revenue\nFROM order_items oi\nJOIN products p ON oi.product_id = p.product_id\nGROUP BY p.product_category_name\nORDER BY total_revenue DESC\nLIMIT 1;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 868,
+          "output_tokens": 509,
+          "sql": []
+        }
+      ],
+      "answer": "Reading: I treated category as the product's category name (product_category_name in products) and summed order_items.price for all items, grouped by category.\n\nAnswer: Beleza_saude had the highest sales revenue, 1,258,681.34."
+    },
+    {
+      "id": "h20",
+      "category": "single_table",
+      "question": "What is the average number of installments for credit card payments? Round to two decimals.",
+      "correct": true,
+      "expected": [
+        [
+          "3.51"
+        ]
+      ],
+      "actual": [
+        [
+          "3.51"
+        ]
+      ],
+      "latency_s": 7.25,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 762,
+          "output_tokens": 241,
+          "sql": [
+            {
+              "query": "SELECT ROUND(AVG(payment_installments), 2) AS avg_installments FROM order_payments WHERE payment_type = 'credit_card';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 828,
+          "output_tokens": 286,
+          "sql": []
+        }
+      ],
+      "answer": "The average number of installments for credit card payments is 3.51 installments (rounded to two decimals)."
+    },
+    {
+      "id": "h21",
+      "category": "single_table",
+      "question": "How many products have no category?",
+      "correct": true,
+      "expected": [
+        [
+          "610.00"
+        ]
+      ],
+      "actual": [
+        [
+          "610.00"
+        ]
+      ],
+      "latency_s": 8.92,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 752,
+          "output_tokens": 428,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS no_category_count FROM products WHERE product_category_name IS NULL OR product_category_name = '';",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 810,
+          "output_tokens": 358,
+          "sql": []
+        }
+      ],
+      "answer": "Using the interpretation that a product has no category when product_category_name is NULL or an empty string, there are 610 products with no category."
+    },
+    {
+      "id": "h22",
+      "category": "single_table",
+      "question": "How many orders contain items from more than one seller?",
+      "correct": true,
+      "expected": [
+        [
+          "1278.00"
+        ]
+      ],
+      "actual": [
+        [
+          "1278.00"
+        ]
+      ],
+      "latency_s": 7.86,
+      "turns": [
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 756,
+          "output_tokens": 387,
+          "sql": [
+            {
+              "query": "SELECT COUNT(*) AS orders_with_multiple_sellers FROM (\n  SELECT order_id\n  FROM order_items\n  GROUP BY order_id\n  HAVING COUNT(DISTINCT seller_id) > 1\n) t;",
+              "error": null,
+              "row_count": 1
+            }
+          ]
+        },
+        {
+          "model": "gpt-5-nano-2025-08-07",
+          "input_tokens": 841,
+          "output_tokens": 213,
+          "sql": []
+        }
+      ],
+      "answer": "1,278 orders contain items from more than one seller."
+    }
+  ]
+}
