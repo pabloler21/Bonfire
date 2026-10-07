@@ -67,3 +67,10 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué decía la referencia:** contar los productos distintos de `perfumaria` en `order_items`, con cualquier `order_status` (868).
 - **Qué se vio:** en el piloto, gpt-5-nano filtró `order_status = 'delivered'` (857) y avisó qué lectura usaba.
 - **Qué se hizo:** el owner decidió que "vendidos" incluye solo los pedidos entregados. La referencia de `d08` en `eval/questions_dev.jsonl` es ahora la consulta del piloto, y `acceptable_sql` sigue vacío. `eval/results/pilot.json` queda como estaba: se calificó con la referencia vieja.
+
+## 2026-10-07 — La Fase 3 se reduce a revisar el SQL del generador a mano (decisión del owner)
+
+- **Qué decía el plan:** 40 preguntas de test, 20 + 40 casos etiquetados para Jev y un congelado con hashes (`eval-frozen`) antes de que exista `src/middleware/`.
+- **Qué se había armado (06–07/10):** 22 preguntas de cosecha corridas con `run_eval` (14/22), y `cases_dev.jsonl` y `cases_test.jsonl` con etiquetas `next_step` / `pitfalls`.
+- **Qué pidió el owner:** no testear a Jev sin tener Jev. Por ahora alcanza con ver cómo escribe SQL el LLM: 10 preguntas normales y 10 con trampa, revisar cada respuesta en Langfuse y ajustar a mano.
+- **Qué se hizo:** se borraron los casos, las preguntas de cosecha y su resultado (recuperables desde el commit 4db5522). Quedan `eval/questions_dev.jsonl` (10 normales) y `eval/questions_traps.jsonl` (10, dos por trampa, sacadas de la cosecha). `eval/README.md` guarda las convenciones de las referencias y las trampas medidas sobre la base. `plan.md` lleva una nota en la regla general y en la Fase 3.

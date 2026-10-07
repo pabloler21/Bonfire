@@ -66,6 +66,9 @@ congelan **antes** de implementar el middleware. Son **cuatro archivos**
 `eval-frozen`. Si se escriben después, sin querer se eligen casos donde el
 middleware ya funciona.
 
+> **07/10/2026, decisión del owner:** esta regla queda sin efecto. Los casos
+> para Jev se escriben cuando Jev exista, no antes. Ver la Fase 3 y `NOTES.md`.
+
 **Dev y test.** La rúbrica, los umbrales y los prompts se ajustan **solo**
 sobre el split dev. El split test corre **una vez**, en la Fase 6. Todo lo
 que cambie después de la primera corrida sobre test es una versión nueva: se
@@ -271,6 +274,17 @@ preguntas simples. Si no llega, el problema está en el prompt del esquema.
 ---
 
 ## Fase 3 — Casos de prueba 🚦
+
+> **07/10/2026, decisión del owner: esta fase se reduce.** Lo que se hace es
+> revisar a mano cómo escribe SQL el LLM generador: 10 preguntas normales
+> (`eval/questions_dev.jsonl`) y 10 con una trampa de Olist cada una
+> (`eval/questions_traps.jsonl`), corridas con `run_eval`, leyendo cada traza
+> en Langfuse y ajustando el prompt. Los splits dev/test, los casos
+> etiquetados para Jev y el congelado `eval-frozen` que describe el resto de
+> esta sección no se hacen ahora: no se testea a Jev antes de que exista.
+> Las trampas confirmadas sobre la base y las convenciones de las referencias
+> están en `eval/README.md`. El texto de abajo queda como referencia para
+> cuando exista Jev.
 
 **Objetivo:** la verdad contra la que se ajustan los umbrales y se valida la
 aplicación. Langfuse muestra qué decidió Jev; no puede decir si la decisión
