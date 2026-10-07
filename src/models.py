@@ -1,6 +1,6 @@
 """Modelos Pydantic compartidos. Fase 1 — SqlCheck y SqlResult. Fase 4 — suma ReviewVerdict y NextAction."""
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -20,3 +20,16 @@ class SqlResult(BaseModel):
     row_count: int = 0  # filas devueltas (como máximo MAX_ROWS)
     truncated: bool = False  # True si la consulta tenía más de MAX_ROWS filas
     error: str | None = None  # rechazo de sqlcheck o error de Postgres
+
+
+class ReviewVerdict(BaseModel):
+    """Lo que dijo Jev sobre un resultado (src/questions/review.py). Lo consume policy.py en la Fase 5."""
+
+    next_step: Literal["answer", "retry", "ask_user"]
+    next_step_confidence: float
+    next_step_probabilities: dict[str, float]
+    pitfalls: dict[str, float]  # Noul: probabilidad de "sí", por trampa
+    model_id: str  # la versión que devolvió la API, no el alias pedido (jev-latest)
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    latency_s: float
