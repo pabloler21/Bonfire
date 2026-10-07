@@ -31,6 +31,9 @@ la pregunta.
 - **Ventas** ("vendidos", "ventas", "facturación", "ingresos"): solo `order_status = 'delivered'`. Decisión del
   owner, 06/10/2026 (`d08`, `NOTES.md`).
 - **Pedidos** ("cuántos pedidos", "pedidos comprados"): todos los estados (`d09`).
+- **Facturación o ingresos**: la pregunta dice qué medida quiere (precio de los ítems, precio más flete, o lo
+  pagado). Si no lo dice, es una pregunta `ambiguous`, con las tres lecturas en `acceptable_sql`. Decisión del
+  owner, 07/10/2026.
 - **Un período sin decir qué fecha**: la fecha de compra, `order_purchase_timestamp` (`d09`, `d10`).
 - **Clientes**: personas, `customer_unique_id`.
 - **Reviews**: contar reviews es contar `review_id` distintos. Los promedios van sobre las filas de
@@ -61,7 +64,9 @@ portugués no cambia ningún número.
 | `retry` | el SQL o el resultado tiene un problema que otra consulta arregla: una trampa, resultado vacío, grano equivocado |
 | `ask_user` | la pregunta es ambigua y el SQL eligió una lectura sin avisar, o el esquema no alcanza para responderla |
 
-Un caso con al menos una trampa es `retry`. El owner revisa y aprueba todas las etiquetas antes de congelar.
+Un caso con al menos una trampa es `retry`. Un error que no es ninguna de las 5 trampas es `retry` con `pitfalls`
+vacío: lo tiene que atrapar `next_step` (`h14`, `cd20`). Una trampa nueva se crea si el error se repite
+(decisión del owner, 07/10/2026). El owner revisa y aprueba todas las etiquetas antes de congelar.
 
 ## Qué se espera por categoría de pregunta
 
