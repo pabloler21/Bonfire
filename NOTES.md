@@ -74,3 +74,10 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué se había armado (06–07/10):** 22 preguntas de cosecha corridas con `run_eval` (14/22), y `cases_dev.jsonl` y `cases_test.jsonl` con etiquetas `next_step` / `pitfalls`.
 - **Qué pidió el owner:** no testear a Jev sin tener Jev. Por ahora alcanza con ver cómo escribe SQL el LLM: 10 preguntas normales y 10 con trampa, revisar cada respuesta en Langfuse y ajustar a mano.
 - **Qué se hizo:** se borraron los casos, las preguntas de cosecha y su resultado (recuperables desde el commit 4db5522). Quedan `eval/questions_dev.jsonl` (10 normales) y `eval/questions_traps.jsonl` (10, dos por trampa, sacadas de la cosecha). `eval/README.md` guarda las convenciones de las referencias y las trampas medidas sobre la base. `plan.md` lleva una nota en la regla general y en la Fase 3.
+
+## 2026-10-07 — Fase 4: la rúbrica y la llamada a Jev en un solo archivo
+
+- **Links:** <https://docs.typesafe.ai/sdk/python>, <https://docs.typesafe.ai/primitives/noul>, <https://docs.typesafe.ai/concepts/state>, <https://docs.typesafe.ai/model-jaggedness/jev-1.13> (consultados el 07/10/2026), y el código del SDK instalado (`typesafe-sdk` 0.7.0).
+- **Qué decía el plan:** un wrapper en `src/jev/client.py` que registra modelo, tokens y latencia, y trata el 400 `max_tokens_exceeded` como error propio sin reintentarlo; la rúbrica aparte en `src/questions/review.py`.
+- **Qué dice el SDK:** `RetryPolicy` reintenta por defecto 408, 429 y 5xx, nunca un 400. No hace falta código para no reintentar `max_tokens_exceeded`: el `TypeSafeBadRequestError` se propaga solo.
+- **Qué se hizo:** todo en `src/questions/review.py` (`SCHEMA_NOTES`, `QUESTIONS`, `build_review_state`, `review`); `src/jev/client.py` se borró, porque el SDK ya es el cliente. El modelo, los tokens y la latencia van en `ReviewVerdict` (`src/models.py`). Se usa el modelo por defecto del SDK (`jev-latest`) y se registra el que contestó. Quedan para cuando hagan falta: `MAX_CELL_CHARS` y reintentar con la mitad de las filas ante un 400.
