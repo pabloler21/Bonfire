@@ -1,4 +1,4 @@
-"""Modelos Pydantic compartidos. Fase 1 — SqlCheck y SqlResult. Fase 4 — suma ReviewVerdict y NextAction."""
+"""Modelos Pydantic compartidos. Fase 1 — SqlCheck y SqlResult. Fase 4 — ReviewVerdict. Fase 5 — NextAction."""
 
 from typing import Any, Literal
 
@@ -33,3 +33,10 @@ class ReviewVerdict(BaseModel):
     input_tokens: int | None = None
     output_tokens: int | None = None
     latency_s: float
+
+
+class NextAction(BaseModel):
+    """Qué hace el agente con un resultado (policy.review_decision). `reason` lo lee el LLM: va en inglés."""
+
+    kind: Literal["answer", "retry", "ask_user"]
+    reason: str
