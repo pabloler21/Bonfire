@@ -1,6 +1,6 @@
 # eval/
 
-Cómo escribe SQL el LLM generador, todavía sin Jev. Dos archivos de preguntas:
+Cómo responde el agente preguntas de negocio sobre Olist. Dos archivos de preguntas:
 
 | Archivo | Qué tiene |
 |---|---|
