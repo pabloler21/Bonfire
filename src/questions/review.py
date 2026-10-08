@@ -90,13 +90,16 @@ QUESTIONS = {
             "uses the purchase date, or the question involves no dates.",
         },
     ),
+    # Mira también la `question`: sin eso, Jev tomaba una suma de pagos como "ingresos" aunque la pregunta pidiera
+    # todos los estados (t03, t04 de eval/results/traps.json, 08/10/2026).
     "undelivered_as_sales": Noul(
-        instructions="The `sql` computes sales, items sold or revenue over orders that are not restricted to "
-        "order_status = 'delivered'.",
+        instructions="The `question` asks about sales, items sold or revenue, and the `sql` includes orders whose "
+        "order_status is not 'delivered'.",
         criteria={
-            "true": "For example summing item prices or counting items sold over orders of every status.",
-            "false": "The SQL filters order_status = 'delivered', or the question is about orders in general "
-            "rather than sales.",
+            "true": "For example summing item prices for 'sales revenue' or counting 'items sold' over orders of "
+            "every status.",
+            "false": "The SQL filters order_status = 'delivered'; or the question asks about payments, freight or "
+            "orders in general, or says to include every order status.",
         },
     ),
 }
