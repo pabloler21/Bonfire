@@ -1,4 +1,6 @@
-"""Fase 2 — El agente armado de punta a punta, sin red: un LLM con respuestas guionadas y una base falsa."""
+"""Fase 2 — El agente armado de punta a punta, sin red: un LLM con respuestas guionadas y una base falsa.
+Estos tests son del generador: arman el agente sin Jev (review=False). El middleware tiene los suyos.
+"""
 
 from itertools import count
 
@@ -33,7 +35,7 @@ def fake_db(monkeypatch):
 
 def test_agent_runs_the_tool_and_answers():
     model = ScriptedModel(messages=iter([sql_call("SELECT count(*) FROM orders"), AIMessage(content="There are 99441 orders.")]))
-    result = build.build_agent(model).invoke({"messages": [{"role": "user", "content": "How many orders?"}]})
+    result = build.build_agent(model, review=False).invoke({"messages": [{"role": "user", "content": "How many orders?"}]})
 
     tool_message = next(m for m in result["messages"] if isinstance(m, ToolMessage))
     assert tool_message.content == "count\n99441\n(1 rows)"  # lo que lee el LLM
@@ -44,7 +46,7 @@ def test_agent_runs_the_tool_and_answers():
 
 def test_rejected_sql_goes_back_to_the_model_as_text():
     model = ScriptedModel(messages=iter([sql_call("DELETE FROM orders"), AIMessage(content="I can only read data.")]))
-    result = build.build_agent(model).invoke({"messages": [{"role": "user", "content": "Delete all orders"}]})
+    result = build.build_agent(model, review=False).invoke({"messages": [{"role": "user", "content": "Delete all orders"}]})
 
     tool_message = next(m for m in result["messages"] if isinstance(m, ToolMessage))
     assert tool_message.content.startswith("Rejected before running:")
@@ -55,10 +57,18 @@ def test_model_call_limit_stops_a_runaway_loop():
     # Un modelo que nunca deja de llamar a la tool: el límite tiene que cortar el loop sin excepción.
     # Un mensaje nuevo por vuelta: LangGraph combina los mensajes por id, y repetir el mismo objeto los pisaría.
     model = ScriptedModel(messages=(sql_call("SELECT 1", f"call_{i}") for i in count()))
-    result = build.build_agent(model).invoke({"messages": [{"role": "user", "content": "loop"}]})
+    result = build.build_agent(model, review=False).invoke({"messages": [{"role": "user", "content": "loop"}]})
 
     model_calls = [m for m in result["messages"] if isinstance(m, AIMessage) and m.tool_calls]
     assert len(model_calls) == settings.agent.max_model_calls
+
+
+def test_the_review_middleware_is_on_by_default():
+    def state_keys(agent):
+        return agent.get_output_jsonschema()["properties"]
+
+    assert "review_kind" in state_keys(build.build_agent(ScriptedModel(messages=iter([]))))
+    assert "review_kind" not in state_keys(build.build_agent(ScriptedModel(messages=iter([])), review=False))
 
 
 def test_no_langfuse_keys_means_no_callbacks():
