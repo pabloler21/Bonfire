@@ -16,6 +16,8 @@ uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/dev.json
 uv run python -m eval.run_eval eval/questions_traps.jsonl eval/results/traps.json
 ```
 
+Desde el 08/10/2026 `run_eval.py` corre el agente completo, con Jev revisando cada consulta (Fase 5). `results/traps.json` (07/10) es de antes: mide al generador solo.
+
 `run_eval.py` califica solo contra `reference_sql`: si el agente usa una lectura de `acceptable_sql`, sale `BAD`
 y se revisa a mano.
 
