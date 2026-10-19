@@ -46,11 +46,11 @@ Jev (Phases 4 and 5):
 - `src/middleware/review.py`: `ReviewMiddleware`. `wrap_tool_call` runs `run_sql`, calls `review()` only when `needs_jev`, appends `Reviewer: <kind>. <reason>` to the `ToolMessage` and returns a `Command` updating `review_attempts` (reducer `add`) and `review_kind` (reducer "latest") in an extended `ReviewState`. `wrap_model_call`, after `answer` or `ask_user`, calls the model with `request.override(tool_choice="none")`. Hooks verified against the installed langchain 1.4.2 / langgraph 1.2.12 (`NOTES.md`, 2026-10-08). Two parallel `run_sql` calls share an attempt number (`ponytail:` comment).
 
 Evaluation (Phase 2, reduced Phase 3):
-- `eval/run_eval.py`: runs the agent over a questions file, grades the last successful query result, and writes traces (turns, SQL, returned model ID, tokens, latency). It grades against `reference_sql` only (`acceptable_sql` is not read yet) and doesn't record whether Jev was on or how many retries happened. `eval/grading.py`: result-set comparison (Phase 6 rules).
+- `eval/run_eval.py` (rewritten 2026-10-19 on Langfuse's recommended path, docs "Experiments via SDK" and "Evaluate an existing application"): `get_client().run_experiment(...)` over local data. `load_items` turns each `.jsonl` line into `{input, expected_output, metadata}` (reference computed live with `run_sql`); `task` runs the agent and returns the last successful result's rows; the `correct` evaluator calls `same_result` and leaves a `correct` score (1/0) on each item's trace. Rows go through `normalize` before reaching Langfuse (its serializer shows a `Decimal` as `"<Decimal>"`). Tokens, returned model ID, latency, SQL and the `Reviewer:` line come from the trace (LangChain `CallbackHandler`), not from our code. Results live in Langfuse → Experiments, not in a JSON file; the second CLI argument is the run name. `max_concurrency=1`. Grades against `reference_sql` only (`acceptable_sql` is not read yet). Unverified until the first run: that the agent's LangChain trace nests inside the experiment item's trace. `eval/grading.py`: result-set comparison (Phase 6 rules), kept as plain code as Langfuse's docs advise ("Keep `grade` as ordinary application code").
 - `eval/questions_dev.jsonl`: 10 normal questions, reviewed by the owner on 2026-10-06. `d08` ("distinct perfumaria products sold") counts delivered orders only since that day.
 - `eval/questions_traps.jsonl`: 10 questions, two per trap, with a `bait` field naming the trap (informative only).
 - `eval/README.md`: how to run both files, the reference conventions, and the 5 traps with the numbers measured in psql on 2026-10-06. Those numbers live only there: the psql queries were one-off checks, nothing saved their output.
-- `eval/results/pilot.json` (2026-09-28, generator only, 9/10 against the old `d08` reference) and `eval/results/traps.json` (2026-10-07, generator only, 4/10). Both predate Jev in the agent.
+- `eval/results/pilot.json` (2026-09-28, generator only, 9/10 against the old `d08` reference) and `eval/results/traps.json` (2026-10-07, generator only, 4/10). Both predate Jev in the agent and were written by the old `run_eval.py`; no new JSON results get written. `src.questions.review`'s `__main__` still reads them.
 
 Observability and manual review:
 - Langfuse Cloud, moved up from Phase 7 by the owner (2026-09-29): `build_agent()` attaches `langfuse.langchain.CallbackHandler` via `with_config` only when `LANGFUSE_PUBLIC_KEY` is set. No key means no callback and no network, which the tests rely on. CLI and eval scripts call `get_client().flush()` before exiting. The Jev call itself isn't traced (no LangChain callback goes through it); the decision shows up in the trace as the `Reviewer:` line of each `ToolMessage`.
@@ -70,7 +70,7 @@ Observability and manual review:
 ### Next steps
 1. Owner: `uv run pytest` (the Phase 5 tests haven't run).
 2. Owner: `uv run python -m src.main "How many customers are there?"` and read the trace: expect `Reviewer: retry` on `customer_id`, a rewrite with `customer_unique_id`, then a text answer. This also checks whether gpt-5-nano honors `tool_choice="none"` with tool calls in the history (unverified).
-3. Owner: rerun the trap questions with Jev into a new file (`eval/results/traps_jev.json`) and compare with `traps.json`.
+3. Owner: rerun the trap questions with Jev as a Langfuse experiment (`traps_jev`) and compare with `traps.json`. Check in the first run that the agent trace nests inside the experiment item.
 4. Phase 5 exit criterion (`plan.md`): every run ends in text, never more than `MAX_ATTEMPTS`, no tools after `answer`/`ask_user`, the retry reason reaches the model, tests pass. Then Phase 6.
 
 Open decisions for the owner: fix the traps in `prompts/sql_agent.md` (fewer generator mistakes, less for Jev to catch) or leave them for Jev; whether `t08` becomes a sixth trap if it repeats. Open technical points (`NOTES.md`): Jev errors propagate (no unreviewed fallback).
@@ -98,8 +98,8 @@ uv run pytest           # all tests, no network or database needed
 uv run pytest tests/test_sqlcheck.py -k cartesian   # one file, filtered by name
 uv run python -m src.agent.tools   # Phase 1 exit criterion against the real database
 uv run python -m src.main "How many orders are there?"   # ask the agent, with Jev (needs OPENAI_API_KEY, TYPESAFE_API_KEY and the database)
-uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/dev.json      # the 10 normal questions
-uv run python -m eval.run_eval eval/questions_traps.jsonl eval/results/traps_jev.json   # the 10 trap questions (don't overwrite traps.json)
+uv run python -m eval.run_eval eval/questions_dev.jsonl dev            # the 10 normal questions, as a Langfuse experiment named "dev"
+uv run python -m eval.run_eval eval/questions_traps.jsonl traps_jev     # the 10 trap questions (results in Langfuse → Experiments)
 uv run python -m src.questions.review eval/results/traps.json t01   # Jev's verdict on the agent's SQL for one question
 ```
 
@@ -123,9 +123,9 @@ Tests live in `tests/` and must run without network access: `test_sqlcheck.py`, 
 - **Fast-moving dependencies:** `langchain` v1 (`create_react_agent` is gone; legacy code lives in `langchain-classic`) and `typesafe-sdk`/Jev (released 2026-09-15). Before writing code against either, read the live docs linked in that phase of `plan.md` (Context7, https://docs.langchain.com/llms.txt, https://docs.typesafe.ai/llms.txt) and the installed package source. Don't write signatures from memory.
 - If the docs contradict the plan, the docs win. Log the discrepancy with a date in `NOTES.md`.
 - Pin exact versions in `uv.lock`. Don't upgrade in the middle of a phase.
-- Record the **model version returned by the API** on every run. `jev-latest` is a moving alias; `ReviewVerdict.model_id` keeps the returned one. For the generator, `eval/run_eval.py` reads it from `AIMessage.response_metadata["model_name"]`.
+- Record the **model version returned by the API** on every run. `jev-latest` is a moving alias; `ReviewVerdict.model_id` keeps the returned one. For the generator, Langfuse's LangChain callback records it on each generation (`eval/results/*.json` from before 2026-10-19 have it per turn).
 - Read message text with `AIMessage.text`, not `.content`: newer OpenAI models return content as a list of blocks (Responses API).
-- `gpt-5-nano` is a reasoning model: reasoning tokens are billed as output, so it spent ~11× the output tokens of `gpt-6-sol` on the pilot (still ~8× cheaper overall). When estimating cost, use measured tokens from `eval/results/`, not list prices alone. It also follows prompt instructions less reliably (it answered one English question in Portuguese).
+- `gpt-5-nano` is a reasoning model: reasoning tokens are billed as output, so it spent ~11× the output tokens of `gpt-6-sol` on the pilot (still ~8× cheaper overall). When estimating cost, use measured tokens (Langfuse traces, or `eval/results/` for the older runs), not list prices alone. It also follows prompt instructions less reliably (it answered one English question in Portuguese).
 - Model choice is the owner's call and cost-sensitive: don't switch the default generator to a pricier model without asking.
 - Test cases for Jev get written now that Jev exists, small and by hand (owner, 2026-10-07). The plan's freeze-before-middleware gate (`eval-frozen`) and the 40/20/40 split are dropped.
 - Phases marked 🚦 are hard gates. Don't move forward without meeting the exit criterion.
