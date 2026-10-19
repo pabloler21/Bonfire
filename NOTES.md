@@ -121,3 +121,9 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Fallas:** t08 sigue igual que el 07/10 y el 08/10 (`order_status = 'approved'` → 0). Jev dijo `answer` 0,82; la regla de cero filas no se dispara porque un `COUNT` en 0 devuelve una fila. t10 respondió con el nombre en portugués (`beleza_saude`), que es la lectura de su `acceptable_sql`, y sale 0 porque `run_eval` no lee `acceptable_sql`.
 - **Decisión del owner:** t10 y `acceptable_sql` quedan como están; no se busca una calificación 100% exacta en esta etapa.
 - **Costo:** 2 llamadas al generador sin retry, 3 con uno; Jev, 1 o 2. Ninguna pregunta llegó a `MAX_ATTEMPTS`.
+
+## 2026-10-19 — `dev`: las 10 preguntas normales con Jev, y la Fase 5 cerrada
+
+- **Resultado:** `correct` 1,0 (10/10). En todas, un intento: 2 llamadas al generador y 1 a Jev, `next_step` = answer (0,85 a 1,0). Latencia por pregunta de 5,2 a 11,3 s.
+- **Falsos positivos:** ninguno. La trampa más alta fue `wrong_grain` 0,38 en d03 (promedio de reviews sobre las filas de `order_reviews`, que es la convención) y después `wrong_grain` 0,23 en d06. Es el caso más cerca del umbral de 0,5 en las respuestas correctas.
+- **Criterio de salida de la Fase 5 (`plan.md`), sobre `dev` y `traps_jev`:** las 20 corridas terminaron en texto; el máximo fue 2 intentos (`MAX_ATTEMPTS` = 4); después de `answer` nunca hubo otra tool call; en los 5 retries el motivo llegó al modelo y lo usó; `pytest` pasa. Cumplido. Lo único que no se ve en la traza es si OpenAI recibió `tool_choice="none"`: el efecto (ninguna tool después de `answer`) sí se ve.
