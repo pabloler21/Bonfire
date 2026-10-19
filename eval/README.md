@@ -7,16 +7,19 @@ Cómo responde el agente preguntas de negocio sobre Olist. Dos archivos de pregu
 | `questions_dev.jsonl` | 10 preguntas normales, sin trampa |
 | `questions_traps.jsonl` | 10 preguntas con una trampa de Olist cada una (`bait`, abajo) |
 
-Cada pregunta trae un `reference_sql` escrito a mano. `run_eval.py` le hace cada pregunta al agente, compara su
-resultado con el de la referencia (`grading.py`) y guarda todo en `results/`. Cada pregunta deja además una
-traza en Langfuse → Tracing, que es donde se revisa la respuesta a mano.
+Cada pregunta trae un `reference_sql` escrito a mano. `run_eval.py` corre las preguntas como un experimento de
+Langfuse (`run_experiment`, desde el 19/10/2026): le hace cada pregunta al agente, compara su resultado con el
+de la referencia (`grading.py`) y deja el score `correct` en la traza de cada pregunta. Las corridas se ven y se
+comparan en Langfuse → Experiments; el segundo argumento es el nombre de la corrida.
 
 ```
-uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/dev.json
-uv run python -m eval.run_eval eval/questions_traps.jsonl eval/results/traps.json
+uv run python -m eval.run_eval eval/questions_dev.jsonl dev
+uv run python -m eval.run_eval eval/questions_traps.jsonl traps_jev
 ```
 
-Desde el 08/10/2026 `run_eval.py` corre el agente completo, con Jev revisando cada consulta (Fase 5). `results/traps.json` (07/10) es de antes: mide al generador solo.
+`run_eval.py` corre el agente completo, con Jev revisando cada consulta (Fase 5). `results/pilot.json` y
+`results/traps.json` son de antes de Jev y de Langfuse Experiments (el `run_eval.py` viejo los escribía): quedan
+como historia, y `python -m src.questions.review` los sigue leyendo.
 
 `run_eval.py` califica solo contra `reference_sql`: si el agente usa una lectura de `acceptable_sql`, sale `BAD`
 y se revisa a mano.
