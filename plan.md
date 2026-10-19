@@ -504,7 +504,7 @@ detección de cada trampa contra `pitfalls`, sobre `cases_dev.jsonl`.
 
 ---
 
-## Fase 5 — Middleware de revisión (después de ejecutar)
+## Fase 5 — Middleware de revisión (después de ejecutar) ✅
 
 **Objetivo:** la pieza central del proyecto: después de cada `run_sql`, Jev
 decide si responder, reintentar o preguntarle al usuario.

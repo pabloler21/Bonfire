@@ -15,14 +15,14 @@ It is **not** a benchmark: nothing compares Jev against an LLM or against other 
 
 **`plan.md` is the source of truth** (in Spanish): phases 0–8, exit criteria, target file layout, and the official doc links for each phase. Read the section for the current phase before starting work. Where the owner changed the plan, `plan.md` carries a dated note and `NOTES.md` the details.
 
-## Current state (2026-10-09)
+## Current state (2026-10-19)
 
 | Phase | State |
 |---|---|
 | 0, 1, 2 | done |
 | 3 | reduced by the owner (2026-10-07) to a manual review of the generator's SQL; paused |
 | 4 | done (2026-10-08): the Jev rubric and call, tried by hand on the agent's real SQL |
-| 5 | code written and pushed on 2026-10-08 in 8 commits (`0114cc6`…`eb76ba8`); **not run yet**: no `pytest`, no real question through the loop |
+| 5 | done (2026-10-19): exit criterion met on `dev` (10/10, no false positives) and `traps_jev` (0.8); details in `NOTES.md` |
 | 6, 7, 8 | not started; `src/api.py` (Phase 7) is the only stub left |
 
 ### What exists
@@ -71,8 +71,9 @@ Observability and manual review:
 1. Done 2026-10-19: `uv run pytest` all green (after the dependency upgrade).
 2. Done 2026-10-19: `src.main "How many customers are there?"` → `SELECT COUNT(*)` (99,441), Jev `customer_id_not_unique` 0.91 / `wrong_grain` 0.84 → `Reviewer: retry` with both reasons → `COUNT(DISTINCT customer_unique_id)` (96,096), Jev all traps ≤ 0.03 and `answer` 1.0 → text answer. 3 generator calls, 2 Jev calls. The trace can't show whether `tool_choice="none"` reached OpenAI (no model parameters recorded); the model did answer in text.
 3. Done 2026-10-19: `traps_jev` (Langfuse Experiments) scored 0.8 against 4/10 without Jev. Jev rescued t01, t02, t06, t09, t10 with one retry each, and gave no false positives. t08 still slips. t10 is right but scores 0 (Portuguese name = its `acceptable_sql`, which `run_eval` doesn't read); the owner keeps it that way (no 100% exact grading for now). Details in `NOTES.md`. The agent trace nests inside the experiment item.
-3b. Owner: `uv run python -m eval.run_eval eval/questions_dev.jsonl dev`. It measures false positives on questions without traps.
-4. Phase 5 exit criterion (`plan.md`): every run ends in text, never more than `MAX_ATTEMPTS`, no tools after `answer`/`ask_user`, the retry reason reaches the model, tests pass. Then Phase 6.
+3b. Done 2026-10-19: `dev` scored 1.0, every question in one attempt, no false positives (highest trap on a correct answer: `wrong_grain` 0.38 on d03).
+4. Done 2026-10-19: Phase 5 exit criterion met (all 20 runs end in text, at most 2 attempts, no tool call after `answer`, the retry reason reaches the model, tests pass).
+5. Next: Phase 6, in a minimal version to be agreed with the owner (the plan's version assumes a 40-question test split and `cases_test.jsonl`, both dropped).
 
 Open decisions for the owner: fix the traps in `prompts/sql_agent.md` (fewer generator mistakes, less for Jev to catch) or leave them for Jev; whether `t08` becomes a sixth trap if it repeats. Open technical points (`NOTES.md`): Jev errors propagate (no unreviewed fallback).
 
