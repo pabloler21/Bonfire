@@ -1,48 +1,23 @@
-"""Corre el agente sobre un archivo de preguntas y guarda las trazas completas.
+"""Corre el agente sobre un archivo de preguntas como un experimento de Langfuse.
 
-Fase 2 (piloto): uv run python -m eval.run_eval eval/questions_dev.jsonl eval/results/pilot.json
-Fase 6 le suma k corridas, falsos positivos y las demás métricas.
+uv run python -m eval.run_eval eval/questions_traps.jsonl traps_jev
+
+Langfuse recorre las preguntas, deja una traza por pregunta (SQL, tokens, modelo, latencia, la línea `Reviewer:`
+de Jev) y le pone el score `correct`. El resultado se ve en Langfuse → Experiments; la consola imprime un resumen.
 """
 
 import json
 import sys
-import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, ToolMessage
-from langfuse import get_client
+from langchain_core.messages import ToolMessage
+from langfuse import Evaluation, get_client
 
 from eval.grading import normalize, same_result
 from src.agent.build import SYSTEM_PROMPT, build_agent
 from src.agent.tools import run_sql
 from src.config import generator_model, prompt_sha, settings
-
-
-def trace(messages: list) -> dict:
-    """Vueltas del agente a partir de los mensajes: SQL, resultado y tokens de cada llamada al modelo."""
-    tool_results = {m.tool_call_id: m.artifact for m in messages if isinstance(m, ToolMessage)}
-    turns = []
-    for m in messages:
-        if not isinstance(m, AIMessage):
-            continue
-        usage = m.usage_metadata or {}
-        turn = {
-            "model": m.response_metadata.get("model_name"),  # el ID que devolvió la API, no el alias pedido
-            "input_tokens": usage.get("input_tokens"),
-            "output_tokens": usage.get("output_tokens"),
-            "sql": [],
-        }
-        for call in m.tool_calls:
-            result = tool_results.get(call["id"])
-            turn["sql"].append({
-                "query": call["args"].get("query"),
-                "error": result.error if result else "no tool result",
-                "row_count": result.row_count if result else 0,
-            })
-        turns.append(turn)
-    return {"turns": turns, "answer": messages[-1].text}
 
 
 def last_successful_result(messages: list):
@@ -53,57 +28,53 @@ def last_successful_result(messages: list):
     return None
 
 
-def run(questions_path: str, out_path: str) -> dict:
-    agent = build_agent()
-    records = []
+def comparable(rows: list) -> list[list[str]]:
+    # Langfuse muestra un Decimal como "<Decimal>": se manda normalizado. normalize() de un texto lo deja igual.
+    return [[normalize(v) for v in row] for row in rows]
+
+
+def load_items(questions_path: str) -> list[dict]:
+    """Cada pregunta del .jsonl como item de Langfuse. La referencia se calcula en vivo: Olist no cambia."""
+    items = []
     for line in Path(questions_path).read_text(encoding="utf-8").splitlines():
-        question = json.loads(line)
-        # Resultado de referencia calculado en vivo: los datos de Olist no cambian. Fase 3 lo congela para test.
-        _, expected = run_sql.func(question["reference_sql"])
-
-        start = time.perf_counter()
-        messages = agent.invoke({"messages": [{"role": "user", "content": question["question"]}]})["messages"]
-        latency = time.perf_counter() - start
-
-        actual = last_successful_result(messages)
-        correct = actual is not None and same_result(expected.rows, actual.rows, question["ordered"])
-        records.append({
-            "id": question["id"],
-            "category": question["category"],
-            "question": question["question"],
-            "correct": correct,
-            "expected": [[normalize(v) for v in row] for row in expected.rows],
-            "actual": [[normalize(v) for v in row] for row in actual.rows] if actual else None,
-            "latency_s": round(latency, 2),
-            **trace(messages),
+        q = json.loads(line)
+        _, expected = run_sql.func(q["reference_sql"])
+        items.append({
+            "input": q["question"],
+            "expected_output": comparable(expected.rows),
+            "metadata": {"id": q["id"], "category": q["category"], "ordered": q["ordered"]},
         })
-        print(f"{question['id']} {'OK ' if correct else 'BAD'} {latency:5.1f}s  {question['question']}")
+    return items
 
-    models = sorted({t["model"] for r in records for t in r["turns"] if t["model"]})
-    report = {
-        "date_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "questions_file": questions_path,
-        "model_requested": generator_model(),
-        "models_returned": models,
-        "max_model_calls": settings.agent.max_model_calls,
-        "prompt_sha": prompt_sha(SYSTEM_PROMPT),
-        "summary": {
-            "correct": sum(r["correct"] for r in records),
-            "total": len(records),
-            "avg_turns": round(sum(len(r["turns"]) for r in records) / len(records), 2),
-            "avg_latency_s": round(sum(r["latency_s"] for r in records) / len(records), 2),
-            "input_tokens": sum(t["input_tokens"] or 0 for r in records for t in r["turns"]),
-            "output_tokens": sum(t["output_tokens"] or 0 for r in records for t in r["turns"]),
-        },
-        "questions": records,
-    }
-    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    Path(out_path).write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return report
+
+def correct(*, output, expected_output, metadata, **kwargs) -> Evaluation:
+    """Evaluator de Langfuse: 1 si las filas del agente son las de la referencia (reglas en grading.py)."""
+    ok = output is not None and same_result(expected_output, output, metadata["ordered"])
+    return Evaluation(name="correct", value=1.0 if ok else 0.0)
 
 
 if __name__ == "__main__":
     load_dotenv()
-    report = run(sys.argv[1], sys.argv[2])
-    print(json.dumps(report["summary"], indent=2))
+    questions_path, run_name = sys.argv[1], sys.argv[2]
+    agent = build_agent()
+
+    def task(*, item, **kwargs):
+        messages = agent.invoke({"messages": [{"role": "user", "content": item["input"]}]})["messages"]
+        result = last_successful_result(messages)
+        return comparable(result.rows) if result else None
+
+    result = get_client().run_experiment(
+        name=run_name,
+        data=load_items(questions_path),
+        task=task,
+        evaluators=[correct],
+        max_concurrency=1,  # una pregunta a la vez: latencias comparables y sin saturar OpenAI ni Postgres
+        metadata={
+            "questions_file": questions_path,
+            "model_requested": generator_model(),
+            "max_model_calls": str(settings.agent.max_model_calls),
+            "prompt_sha": prompt_sha(SYSTEM_PROMPT),
+        },
+    )
+    print(result.format(include_item_results=True))
     get_client().flush()  # proceso corto: sin flush, las trazas en cola se pierden al salir
