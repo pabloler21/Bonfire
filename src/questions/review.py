@@ -6,11 +6,13 @@ Probar a mano con lo que escribió el agente, con la base levantada:
 """
 
 import json
+import os
 import sys
 import time
 from functools import cache
 from pathlib import Path
 
+from openinference.instrumentation.typesafe import TypeSafeAIInstrumentor
 from typesafe_sdk import Choice, Noul, TypeSafeClient
 
 from src.models import ReviewVerdict, SqlResult
@@ -124,6 +126,13 @@ def build_review_state(question: str, sql: str, result: SqlResult) -> dict:
 @cache
 def _client() -> TypeSafeClient:
     # TYPESAFE_API_KEY sale del .env. Modelo: el default del SDK (jev-latest); se registra la versión que contestó.
+    # Con keys de Langfuse, cada system_one queda como un span en la traza: el state, las preguntas, las
+    # probabilidades, el modelo que contestó y los tokens. El instrumentor de OpenInference parchea el método del
+    # SDK (no hace falta envolver el cliente) y usa el tracer de Langfuse, que ya está activo porque el agente lo
+    # registró antes de su primera tool call (langfuse.com/integrations/model-providers/typesafe, 19/10/2026).
+    # Los tests reemplazan _client, así que nunca llegan acá.
+    if os.environ.get("LANGFUSE_PUBLIC_KEY"):
+        TypeSafeAIInstrumentor().instrument()
     return TypeSafeClient()
 
 
