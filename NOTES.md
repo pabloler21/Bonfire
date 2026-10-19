@@ -105,3 +105,10 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué se verificó:** que todo importa, que los hooks del middleware (`wrap_tool_call`, `wrap_model_call`, `ModelRequest.override`, `tool_choice`) siguen existiendo y que `system_one` tiene la misma firma. **No se corrió `pytest`** (lo corre el owner).
 - **Jev en Langfuse:** <https://langfuse.com/integrations/model-providers/typesafe>. El SDK de TypeSafe no emite spans; el instrumentor de OpenInference parchea `TypeSafeClient.system_one` y cada llamada queda como span (state, preguntas, respuestas con probabilidades, modelo devuelto, tokens). Se activa en `_client()` de `src/questions/review.py` solo si hay `LANGFUSE_PUBLIC_KEY`. Langfuse v5 exporta por defecto solo spans de LLM; los de OpenInference pasan el filtro (prefijo `openinference` en `KNOWN_LLM_INSTRUMENTATION_SCOPE_PREFIXES`).
 - **Sin verificar todavía:** que el span de Jev quede adentro del span del tool en la traza del agente, y que la traza del agente quede adentro del item del experimento en `run_eval`. Se mira en la primera corrida.
+
+## 2026-10-19 — Primera corrida real del agente con Jev
+
+- **Qué se corrió (owner):** `uv run pytest`, todo verde, y `src.main "How many customers are there?"`. Traza `7909f70c0362a032e270642f69e63cb4`, revisada por la API de Langfuse.
+- **Qué se vio:** intento 1, `SELECT COUNT(*) FROM customers` → 99.441; Jev (`jev-1.13.0`, 1.274 tokens de entrada / 135 de salida) da `customer_id_not_unique` 0,91, `wrong_grain` 0,84 y `next_step` = retry 0,97. El LLM recibe `Reviewer: retry.` con los dos motivos y reescribe con `COUNT(DISTINCT customer_unique_id)` → 96.096. Jev deja todas las trampas en 0,03 o menos y da `answer` 1,0. Respuesta en texto: "There are 96,096 unique customers".
+- **Verificado:** el span de Jev queda adentro de la traza del agente (bajo el nodo `tools`, al lado de `run_sql`). El motivo del retry llega al modelo. El agente termina en texto.
+- **Sigue sin verificar:** si OpenAI recibió `tool_choice="none"`. La traza no guarda los parámetros del modelo, y el modelo pudo haber contestado en texto por su cuenta. Los tests sí comprueban que el middleware lo pide.
