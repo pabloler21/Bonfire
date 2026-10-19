@@ -112,3 +112,12 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué se vio:** intento 1, `SELECT COUNT(*) FROM customers` → 99.441; Jev (`jev-1.13.0`, 1.274 tokens de entrada / 135 de salida) da `customer_id_not_unique` 0,91, `wrong_grain` 0,84 y `next_step` = retry 0,97. El LLM recibe `Reviewer: retry.` con los dos motivos y reescribe con `COUNT(DISTINCT customer_unique_id)` → 96.096. Jev deja todas las trampas en 0,03 o menos y da `answer` 1,0. Respuesta en texto: "There are 96,096 unique customers".
 - **Verificado:** el span de Jev queda adentro de la traza del agente (bajo el nodo `tools`, al lado de `run_sql`). El motivo del retry llega al modelo. El agente termina en texto.
 - **Sigue sin verificar:** si OpenAI recibió `tool_choice="none"`. La traza no guarda los parámetros del modelo, y el modelo pudo haber contestado en texto por su cuenta. Los tests sí comprueban que el middleware lo pide.
+
+## 2026-10-19 — `traps_jev`: las 10 trampas con Jev (Langfuse Experiments)
+
+- **Resultado:** `correct` 0,8 (8/10). Sin Jev, `traps.json` (07/10) daba 4/10.
+- **Rescatadas por Jev:** t01 y t02 (`customer_id_not_unique` 0,90 y 0,91), t06 (`wrong_grain` 0,63 con `next_step` = answer: decidió la trampa), t09 (`undelivered_as_sales` 0,96) y t10 (0,93). En todas, un retry y después el SQL correcto.
+- **Sin falsos positivos:** t03, t04, t05 y t07 salieron bien de entrada y Jev dijo `answer`. La trampa más alta en una respuesta correcta fue 0,35 (`join_fanout` en t03).
+- **Fallas:** t08 sigue igual que el 07/10 y el 08/10 (`order_status = 'approved'` → 0). Jev dijo `answer` 0,82; la regla de cero filas no se dispara porque un `COUNT` en 0 devuelve una fila. t10 respondió con el nombre en portugués (`beleza_saude`), que es la lectura de su `acceptable_sql`, y sale 0 porque `run_eval` no lee `acceptable_sql`.
+- **Decisión del owner:** t10 y `acceptable_sql` quedan como están; no se busca una calificación 100% exacta en esta etapa.
+- **Costo:** 2 llamadas al generador sin retry, 3 con uno; Jev, 1 o 2. Ninguna pregunta llegó a `MAX_ATTEMPTS`.

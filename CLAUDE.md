@@ -70,7 +70,8 @@ Observability and manual review:
 ### Next steps
 1. Done 2026-10-19: `uv run pytest` all green (after the dependency upgrade).
 2. Done 2026-10-19: `src.main "How many customers are there?"` → `SELECT COUNT(*)` (99,441), Jev `customer_id_not_unique` 0.91 / `wrong_grain` 0.84 → `Reviewer: retry` with both reasons → `COUNT(DISTINCT customer_unique_id)` (96,096), Jev all traps ≤ 0.03 and `answer` 1.0 → text answer. 3 generator calls, 2 Jev calls. The trace can't show whether `tool_choice="none"` reached OpenAI (no model parameters recorded); the model did answer in text.
-3. Owner: rerun the trap questions with Jev as a Langfuse experiment (`traps_jev`) and compare with `traps.json`. Check in the first run that the agent trace nests inside the experiment item.
+3. Done 2026-10-19: `traps_jev` (Langfuse Experiments) scored 0.8 against 4/10 without Jev. Jev rescued t01, t02, t06, t09, t10 with one retry each, and gave no false positives. t08 still slips. t10 is right but scores 0 (Portuguese name = its `acceptable_sql`, which `run_eval` doesn't read); the owner keeps it that way (no 100% exact grading for now). Details in `NOTES.md`. The agent trace nests inside the experiment item.
+3b. Owner: `uv run python -m eval.run_eval eval/questions_dev.jsonl dev`. It measures false positives on questions without traps.
 4. Phase 5 exit criterion (`plan.md`): every run ends in text, never more than `MAX_ATTEMPTS`, no tools after `answer`/`ask_user`, the retry reason reaches the model, tests pass. Then Phase 6.
 
 Open decisions for the owner: fix the traps in `prompts/sql_agent.md` (fewer generator mistakes, less for Jev to catch) or leave them for Jev; whether `t08` becomes a sixth trap if it repeats. Open technical points (`NOTES.md`): Jev errors propagate (no unreviewed fallback).
