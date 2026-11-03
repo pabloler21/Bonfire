@@ -127,3 +127,11 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Resultado:** `correct` 1,0 (10/10). En todas, un intento: 2 llamadas al generador y 1 a Jev, `next_step` = answer (0,85 a 1,0). Latencia por pregunta de 5,2 a 11,3 s.
 - **Falsos positivos:** ninguno. La trampa más alta fue `wrong_grain` 0,38 en d03 (promedio de reviews sobre las filas de `order_reviews`, que es la convención) y después `wrong_grain` 0,23 en d06. Es el caso más cerca del umbral de 0,5 en las respuestas correctas.
 - **Criterio de salida de la Fase 5 (`plan.md`), sobre `dev` y `traps_jev`:** las 20 corridas terminaron en texto; el máximo fue 2 intentos (`MAX_ATTEMPTS` = 4); después de `answer` nunca hubo otra tool call; en los 5 retries el motivo llegó al modelo y lo usó; `pytest` pasa. Cumplido. Lo único que no se ve en la traza es si OpenAI recibió `tool_choice="none"`: el efecto (ninguna tool después de `answer`) sí se ve.
+
+## 2026-11-02 — Sexta trampa (`status_as_event`) y Jev 1.14
+
+- **Por qué:** t08 ("How many orders were approved in January 2018?") leyó "approved" como `order_status = 'approved'` y dio 0 en tres corridas (`traps.json`, la prueba a mano del 08/10 y `traps_jev`). La convención dice "una trampa nueva solo si el error se repite", y se repitió. El owner pidió terminar las fases sin preguntar, así que se tomó la decisión que ya estaba propuesta.
+- **Qué se hizo:** `status_as_event` en `QUESTIONS` y su motivo en `TRAP_REASONS`. El criterio `false` excluye las preguntas por el estado actual (`d02`, "canceled") y `order_status = 'delivered'`, que es el último estado.
+- **Verificado a mano** (`python -m src.questions.review`): t08 0,86; t07 con `status = 'delivered'` 0,09; d02 0,06; d08 0,09.
+- **Jev 1.14:** `jev-latest` ahora contesta `jev-1.14.0` (salió el 14/10/2026, typesafe.ai/pricing). Los umbrales se ajustaron con 1.13. Repaso a mano de las 10 trampas de `traps.json` con 1.14 y la trampa nueva: las 6 malas pasan 0,5 (t06 `wrong_grain` 0,60, la más baja); las 4 correctas no tienen ninguna trampa sobre 0,3. Se sigue usando `jev-latest` (el default del SDK que eligió el owner) y cada corrida registra el modelo que contestó.
+- **Precio:** $0,042 por millón de tokens para `jev-1.13.0` y `jev-1.14.0` (typesafe.ai/pricing, consultado el 02/11/2026).
