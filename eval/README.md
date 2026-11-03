@@ -51,6 +51,7 @@ SQL que corre sin error y responde mal. Números medidos sobre la base el 06/10/
 | `wrong_grain` | cuenta filas de una tabla cuya fila no es la entidad de la pregunta | filas de `order_items` como pedidos: 112.650 contra 98.666 (+14,2%); filas de `order_reviews` como reviews: 99.224 contra 98.410 |
 | `wrong_date_column` | usa otra fecha que la que pide la pregunta | pedidos de 2017: 45.101 por compra, 40.930 por entrega (−9,2%) |
 | `undelivered_as_sales` | cuenta pedidos no entregados como ventas | 2.963 pedidos no entregados de 99.441 (3,0%); `d08`: 868 contra 857 |
+| `status_as_event` | pide que `order_status` sea el evento de la pregunta ("aprobados en enero" → `order_status = 'approved'`) y pierde los pedidos que ya pasaron a otro estado | `t08`: 7.187 por `order_approved_at` contra 0 con el estado (agregada el 02/11/2026; no tiene preguntas propias, `t08` tiene `bait` `wrong_date_column`) |
 
 Descartada: categorías sin traducir. El join con la tabla de traducción pierde 13 productos, y el nombre en
 portugués no cambia ningún número.
