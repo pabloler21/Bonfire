@@ -135,3 +135,9 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Verificado a mano** (`python -m src.questions.review`): t08 0,86; t07 con `status = 'delivered'` 0,09; d02 0,06; d08 0,09.
 - **Jev 1.14:** `jev-latest` ahora contesta `jev-1.14.0` (salió el 14/10/2026, typesafe.ai/pricing). Los umbrales se ajustaron con 1.13. Repaso a mano de las 10 trampas de `traps.json` con 1.14 y la trampa nueva: las 6 malas pasan 0,5 (t06 `wrong_grain` 0,60, la más baja); las 4 correctas no tienen ninguna trampa sobre 0,3. Se sigue usando `jev-latest` (el default del SDK que eligió el owner) y cada corrida registra el modelo que contestó.
 - **Precio:** $0,042 por millón de tokens para `jev-1.13.0` y `jev-1.14.0` (typesafe.ai/pricing, consultado el 02/11/2026).
+
+## 2026-11-02 — La pregunta llegaba a la traza de Jev letra por letra
+
+- **Qué se vio:** en la traza `7909f70c…`, el span `TypeSafeClient` mostraba `"question": ["H", "o", "w", ...]`.
+- **Causa:** `HumanMessage.text` devuelve un `TextAccessor`, una subclase de `str` (`langchain-core` 1.6.12). El SDK de TypeSafe lo serializa bien (`{"question": "How many?"}`, comprobado con su `serialize`), así que Jev siempre recibió el texto. El instrumentor de OpenInference (`_to_builtins`) lo trata como secuencia y lo registra como lista de letras.
+- **Arreglo:** `_question()` en `src/middleware/review.py` devuelve `str(...)`. El test del middleware comprueba que llega un `str` común.
