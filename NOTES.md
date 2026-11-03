@@ -141,3 +141,14 @@ Discrepancias entre plan.md y la documentación, con fecha.
 - **Qué se vio:** en la traza `7909f70c…`, el span `TypeSafeClient` mostraba `"question": ["H", "o", "w", ...]`.
 - **Causa:** `HumanMessage.text` devuelve un `TextAccessor`, una subclase de `str` (`langchain-core` 1.6.12). El SDK de TypeSafe lo serializa bien (`{"question": "How many?"}`, comprobado con su `serialize`), así que Jev siempre recibió el texto. El instrumentor de OpenInference (`_to_builtins`) lo trata como secuencia y lo registra como lista de letras.
 - **Arreglo:** `_question()` en `src/middleware/review.py` devuelve `str(...)`. El test del middleware comprueba que llega un `str` común.
+
+## 2026-11-02 — Fases 6, 7 y 8 (el owner pidió terminarlas sin preguntar)
+
+- **Fase 6, versión mínima:** la que se había propuesto el 19/10: k = 3 corridas de `dev` y `traps` como experimentos de Langfuse, falsos positivos marcados contra la referencia y sin calibración. Código:
+  - `run_eval.py` guarda cada intento (SQL, filas, si lo vio Jev, decisión) y suma los scores `attempts` y `false_positives`;
+  - `grading.label_attempt` clasifica cada revisión: `pass`, `false_positive`, `true_catch`, `missed` o `not_reviewed`;
+  - `eval/report.py` arma la tabla desde la API de Langfuse (experiments, experiment items y observations), con el costo del generador que calcula Langfuse y los tokens de Jev.
+- **La key de OpenAI venció:** las 6 corridas (`dev_k1`…`traps_k3`, 02/11 01:51 UTC) fallaron todas en la primera llamada a `gpt-5-nano` con `401 expired_secret_key`. Jev anda (`jev-1.14.0` contestó ese mismo día). Las corridas quedaron en Langfuse; `report.py` saltea las corridas donde fallaron todas las preguntas, así que se pueden repetir con los mismos nombres. El README publica las corridas del 19/10 y el repaso a mano con 1.14, y aclara que las 3 repeticiones faltan.
+- **Fase 6, resultados publicados (19/10, k = 1, 5 trampas, `jev-1.13.0`):** falsos positivos 0/18, errores detectados 5/6, acierto 0,9, latencia p95 16,6 s, costo US$ 0,00064 por pregunta (generador más Jev), 1,25 intentos por pregunta.
+- **Fase 7:** `src/api.py` con `POST /ask` (respuesta, `kind` = `answer` o `clarification`, y los intentos). Sin estado entre requests. `attempts()` pasó a `src/middleware/review.py` y lo usan la API y `run_eval`. Imagen con uv 0.11.1 fijado (la versión que generó `uv.lock`) y el servicio `api` en compose, que pisa `AGENT_DSN` para usar el host `db`. Docs consultadas: FastAPI (Context7: `TestClient` necesita `httpx`, `lifespan`) y la guía de uv para Docker. Verificado en Docker hasta la llamada al generador; la respuesta completa necesita una key nueva.
+- **Fase 8:** `README.md` en inglés (el owner trabaja todo en inglés), con las nueve secciones del plan. El ejemplo de Jev es real, de la traza `7909f70c…`.
