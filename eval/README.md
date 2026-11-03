@@ -9,12 +9,22 @@ Cómo responde el agente preguntas de negocio sobre Olist. Dos archivos de pregu
 
 Cada pregunta trae un `reference_sql` escrito a mano. `run_eval.py` corre las preguntas como un experimento de
 Langfuse (`run_experiment`, desde el 19/10/2026): le hace cada pregunta al agente, compara su resultado con el
-de la referencia (`grading.py`) y deja el score `correct` en la traza de cada pregunta. Las corridas se ven y se
-comparan en Langfuse → Experiments; el segundo argumento es el nombre de la corrida.
+de la referencia (`grading.py`) y deja los scores `correct`, `attempts` y `false_positives` en la traza de cada
+pregunta. La salida de cada pregunta guarda además cada intento: el SQL, sus filas y la decisión de la revisión. Las
+corridas se ven y se comparan en Langfuse → Experiments; el segundo argumento es el nombre de la corrida.
 
 ```
-uv run python -m eval.run_eval eval/questions_dev.jsonl dev
-uv run python -m eval.run_eval eval/questions_traps.jsonl traps_jev
+uv run python -m eval.run_eval eval/questions_dev.jsonl dev_k1
+uv run python -m eval.run_eval eval/questions_traps.jsonl traps_k1
+```
+
+`report.py` (Fase 6, 02/11/2026) arma la tabla con las corridas que empiezan con cada prefijo, leyéndolas de
+Langfuse. Escribe `results/phase6.md` (la tabla, falsos positivos primero), `results/flag_review.csv` (cada `retry`
+y `ask_user`, marcado `true_catch` o `false_positive` contra la referencia con `label_attempt`) y
+`results/phase6.json` (los datos crudos). Saltea las corridas donde fallaron todas las preguntas:
+
+```
+uv run python -m eval.report dev_k traps_k
 ```
 
 `run_eval.py` corre el agente completo, con Jev revisando cada consulta (Fase 5). `results/pilot.json` y
