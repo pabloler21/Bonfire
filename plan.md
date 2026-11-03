@@ -617,6 +617,15 @@ el resultado.
 
 ## Fase 6 — Validación 🚦
 
+> **Versión mínima (02/11/2026, el owner pidió terminar las fases sin preguntar):** las 20 preguntas de
+> `eval/` en vez del split de test de 40 y `cases_test.jsonl` (descartados el 07/10). k = 3 corridas por archivo
+> como experimentos de Langfuse; `eval/report.py` arma la tabla, `flag_review.csv` y los datos crudos desde
+> Langfuse. Los `retry` y `ask_user` se marcan contra la referencia (`label_attempt`), no a mano. Sin calibración
+> (Brier, diagrama, ECE): con 20 preguntas no dice nada; queda como limitación en el README.
+> **Estado:** criterio de salida cumplido sobre las corridas del 19/10 (0 falsos positivos de 18). Las 3
+> repeticiones con la sexta trampa y `jev-1.14.0` no se pudieron correr: la key de OpenAI venció (02/11). Detalle en
+> `NOTES.md`.
+
 **Objetivo:** saber si la aplicación funciona bien: si Jev deja pasar los
 resultados correctos, si detecta las trampas, si el agente responde bien y
 cuánto cuesta cada pregunta. No es una comparación: se mide una sola
@@ -683,6 +692,10 @@ agente lento y caro.
 
 ## Fase 7 — API y observabilidad
 
+> **Estado (02/11/2026):** `src/api.py` (FastAPI), `Dockerfile` y el servicio `api` en `docker-compose.yml`,
+> con tests. Verificado: la API arranca en Docker, valida la entrada y llega al generador. Falta ver una respuesta
+> completa con su traza, que necesita una key de OpenAI vigente.
+
 **Objetivo:** que el proyecto sea usable y que se pueda ver qué decidió Jev
 en cada intento.
 
@@ -719,7 +732,9 @@ incluidas las decisiones de Jev con sus probabilidades, se ve en Langfuse.
 
 ---
 
-## Fase 8 — README y cierre
+## Fase 8 — README y cierre ✅
+
+> **Hecho (02/11/2026):** `README.md` en inglés, con las nueve secciones.
 
 **Contenido obligatorio del README**
 
