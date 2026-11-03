@@ -37,3 +37,21 @@ def same_result(expected: list[list[Any]], actual: list[list[Any]], ordered: boo
     if ordered:
         return expected_keys == actual_keys
     return Counter(expected_keys) == Counter(actual_keys)
+
+
+def label_attempt(attempt: dict, expected: list[list[Any]], ordered: bool = False) -> str:
+    """Cómo salió la revisión de un intento del agente, comparando su resultado con la referencia (Fase 6).
+
+    - `false_positive`: el resultado estaba bien y la revisión pidió retry o ask_user.
+    - `true_catch`: estaba mal y la revisión lo mandó a reintentar.
+    - `missed`: estaba mal y la revisión dijo answer.
+    - `pass`: estaba bien y la revisión dijo answer.
+    - `not_reviewed`: error, cero filas o último intento; decidió el código, Jev no lo vio.
+    """
+    if not attempt["reviewed"]:
+        return "not_reviewed"
+    right = same_result(expected, attempt["rows"], ordered)
+    flagged = attempt["decision"] != "answer"
+    return {(True, True): "false_positive", (False, True): "true_catch", (False, False): "missed", (True, False): "pass"}[
+        (right, flagged)
+    ]

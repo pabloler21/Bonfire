@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from eval.grading import normalize, same_result
+from eval.grading import label_attempt, normalize, same_result
 
 
 @pytest.mark.parametrize(
@@ -48,3 +48,19 @@ def test_extra_or_missing_columns_fail():
 def test_empty_results():
     assert same_result([], [])
     assert not same_result([["x"]], [])
+
+
+@pytest.mark.parametrize(
+    ("rows", "decision", "reviewed", "label"),
+    [
+        ([["96096.00"]], "retry", True, "false_positive"),
+        ([["99441.00"]], "retry", True, "true_catch"),
+        ([["99441.00"]], "answer", True, "missed"),
+        ([["96096.00"]], "answer", True, "pass"),
+        ([["96096.00"]], "ask_user", True, "false_positive"),  # ask_user sobre un resultado correcto también molesta
+        ([], "retry", False, "not_reviewed"),
+    ],
+)
+def test_label_attempt(rows, decision, reviewed, label):
+    attempt = {"rows": rows, "decision": decision, "reviewed": reviewed}
+    assert label_attempt(attempt, expected=[["96096.00"]]) == label  # las dos tablas llegan normalizadas, como en run_eval
