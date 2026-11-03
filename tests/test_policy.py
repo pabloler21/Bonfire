@@ -44,14 +44,19 @@ def test_ask_user_goes_through():
 
 def test_sql_error_retries_without_a_verdict():
     failed = SqlResult(error="PostgreSQL error: column x does not exist")
-    assert not policy.needs_jev(failed)
+    assert not policy.needs_jev(failed, attempt=1)
     assert policy.review_decision(failed, None, attempt=1).kind == "retry"
 
 
 def test_zero_rows_retry_without_a_verdict():
     empty = SqlResult(columns=["n"], rows=[], row_count=0)
-    assert not policy.needs_jev(empty)
+    assert not policy.needs_jev(empty, attempt=1)
     assert policy.review_decision(empty, None, attempt=1).kind == "retry"
+
+
+def test_rows_need_jev_until_the_last_attempt():
+    assert policy.needs_jev(ROWS, attempt=policy.MAX_ATTEMPTS - 1)
+    assert not policy.needs_jev(ROWS, attempt=policy.MAX_ATTEMPTS)
 
 
 def test_attempt_cap_answers_even_with_a_trap():

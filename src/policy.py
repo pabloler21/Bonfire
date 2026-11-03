@@ -26,9 +26,10 @@ TRAP_REASONS = {
 }
 
 
-def needs_jev(result: SqlResult) -> bool:
-    """Un error de SQL o cero filas los resuelve el código: no hace falta preguntarle a Jev."""
-    return result.error is None and result.row_count > 0
+def needs_jev(result: SqlResult, attempt: int) -> bool:
+    """Un error de SQL, cero filas o el último intento los resuelve el código: no hace falta preguntarle a Jev.
+    En el último intento review_decision() responde igual, así que el veredicto se pagaría para nada."""
+    return attempt < MAX_ATTEMPTS and result.error is None and result.row_count > 0
 
 
 def review_decision(result: SqlResult, verdict: ReviewVerdict | None, attempt: int) -> NextAction:

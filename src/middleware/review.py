@@ -1,6 +1,6 @@
 """Fase 5 — Jev después de cada run_sql, y respuesta en texto cuando ya no hay que reintentar.
 
-- wrap_tool_call: corre run_sql, le pregunta a Jev (salvo error o cero filas), decide con policy.review_decision()
+- wrap_tool_call: corre run_sql, le pregunta a Jev (salvo error, cero filas o último intento), decide con policy.review_decision()
   y le agrega la decisión al ToolMessage que lee el LLM. Con `retry`, el motivo es lo que usa para reescribir.
 - wrap_model_call: si la última decisión fue `answer` o `ask_user`, llama al modelo con tool_choice="none", así
   responde en texto. Con `ask_user`, ese texto es la pregunta aclaratoria.
@@ -44,7 +44,7 @@ class ReviewMiddleware(AgentMiddleware):
         attempt = request.state.get("review_attempts", 0) + 1
         result = message.artifact
         verdict = None
-        if policy.needs_jev(result):
+        if policy.needs_jev(result, attempt):
             verdict = jev.review(_question(request.state), request.tool_call["args"]["query"], result)
         action = policy.review_decision(result, verdict, attempt)
 

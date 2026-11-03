@@ -92,13 +92,15 @@ def test_zero_rows_skip_jev_and_retry(monkeypatch):
 
 
 def test_attempt_cap_stops_the_retries(monkeypatch):
-    monkeypatch.setattr(jev, "review", lambda *args: verdict("retry", join_fanout=0.9))
+    reviewed = []
+    monkeypatch.setattr(jev, "review", lambda q, sql, r: reviewed.append(sql) or verdict("retry", join_fanout=0.9))
     calls = [sql_call(f"SELECT {i}", f"c{i}") for i in range(policy.MAX_ATTEMPTS)]
     model = RecordingModel(messages=iter([*calls, AIMessage(content="Best effort: 99441, it may be wrong.")]))
 
     messages = run(model)
 
     assert len(messages) == policy.MAX_ATTEMPTS
+    assert len(reviewed) == policy.MAX_ATTEMPTS - 1  # el último intento se responde sin pagarle a Jev
     assert all("Reviewer: retry." in m.content for m in messages[:-1])
     assert "Reviewer: answer. Attempt limit reached." in messages[-1].content
     assert model.tool_choices[-1] == "none"
