@@ -58,8 +58,11 @@ class ReviewMiddleware(AgentMiddleware):
 
 
 def _question(state) -> str:
-    """La pregunta del usuario: el primer mensaje humano (el agente es de un solo turno)."""
-    return next(m.text for m in state["messages"] if isinstance(m, HumanMessage))
+    """La pregunta del usuario: el primer mensaje humano (el agente es de un solo turno).
+
+    str(): .text es un TextAccessor (subclase de str). El SDK de TypeSafe lo manda bien, pero el instrumentor de
+    OpenInference lo recorre como secuencia y en Langfuse la pregunta aparecía letra por letra (02/11/2026)."""
+    return str(next(m.text for m in state["messages"] if isinstance(m, HumanMessage)))
 
 
 def attempts(messages: list) -> list[dict]:

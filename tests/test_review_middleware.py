@@ -45,7 +45,7 @@ def no_jev(*args):
 
 def test_retry_adds_the_reason_and_answer_forces_text(monkeypatch):
     def fake_review(question, sql, result):
-        assert question == QUESTION
+        assert question == QUESTION and type(question) is str  # un str común, no el TextAccessor de LangChain
         return verdict("answer", customer_id_not_unique=0.9) if "COUNT(*)" in sql else verdict("answer")
 
     monkeypatch.setattr(jev, "review", fake_review)
