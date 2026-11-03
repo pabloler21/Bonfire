@@ -22,5 +22,23 @@ services:
       timeout: 5s
       retries: 20
 
+  api:
+    build: .
+    env_file: .env  # OPENAI_API_KEY, TYPESAFE_API_KEY, LANGFUSE_* y el resto; nada queda en la imagen
+    environment:
+      # adentro de Docker la base se llama "db", no 127.0.0.1: pisa el AGENT_DSN del .env
+      AGENT_DSN: postgresql://bonfire_agent:${BONFIRE_AGENT_PASSWORD}@db:5432/olist
+    ports:
+      - "127.0.0.1:${BONFIRE_API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # la imagen no trae curl: le pregunta a la API con el Python que ya tiene
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/openapi.json')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
   pgdata:
