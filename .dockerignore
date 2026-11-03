@@ -1,0 +1,9 @@
+# Lo que no entra a la imagen de la API: secretos, datos, entornos y resultados.
+.env
+.git
+.venv
+data/
+eval/results/
+docs/
+**/__pycache__
+.pytest_cache
