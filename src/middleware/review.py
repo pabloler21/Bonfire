@@ -13,7 +13,7 @@ from operator import add
 from typing import Annotated, NotRequired
 
 from langchain.agents.middleware import AgentMiddleware, AgentState
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.types import Command
 
 from src import policy
@@ -60,3 +60,22 @@ class ReviewMiddleware(AgentMiddleware):
 def _question(state) -> str:
     """La pregunta del usuario: el primer mensaje humano (el agente es de un solo turno)."""
     return next(m.text for m in state["messages"] if isinstance(m, HumanMessage))
+
+
+def attempts(messages: list) -> list[dict]:
+    """Cada run_sql de una corrida, leído de los mensajes: el SQL, su resultado, si lo vio Jev y qué decidió la
+    revisión. La decisión sale de la línea `Reviewer:` que escribe wrap_tool_call. Lo usan la API y run_eval."""
+    queries = {c["id"]: c["args"].get("query") for m in messages if isinstance(m, AIMessage) for c in m.tool_calls}
+    found = []
+    for m in messages:
+        if isinstance(m, ToolMessage) and isinstance(m.artifact, SqlResult):
+            decision, _, reason = m.text.rpartition("Reviewer: ")[2].partition(". ")
+            found.append({
+                "sql": queries.get(m.tool_call_id),
+                "result": m.artifact,
+                # la misma cuenta que wrap_tool_call: el intento número n se revisa si needs_jev(result, n)
+                "reviewed": policy.needs_jev(m.artifact, len(found) + 1),
+                "decision": decision,
+                "reason": reason,
+            })
+    return found

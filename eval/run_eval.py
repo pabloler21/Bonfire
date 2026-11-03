@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langfuse import Evaluation, get_client
 
 from eval.grading import label_attempt, normalize, same_result
@@ -21,7 +21,7 @@ from src import policy
 from src.agent.build import SYSTEM_PROMPT, build_agent
 from src.agent.tools import run_sql
 from src.config import generator_model, prompt_sha, settings
-from src.models import SqlResult
+from src.middleware import review as review_middleware
 
 
 def last_successful_result(messages: list):
@@ -38,22 +38,12 @@ def comparable(rows: list) -> list[list[str]]:
 
 
 def attempts(messages: list) -> list[dict]:
-    """Cada run_sql del agente: el SQL, sus filas, si lo vio Jev y qué decidió la revisión (la línea `Reviewer:`)."""
-    queries = {c["id"]: c["args"].get("query") for m in messages if isinstance(m, AIMessage) for c in m.tool_calls}
-    found = []
-    for m in messages:
-        if isinstance(m, ToolMessage) and isinstance(m.artifact, SqlResult):
-            decision, _, reason = m.text.rpartition("Reviewer: ")[2].partition(". ")
-            found.append({
-                "sql": queries.get(m.tool_call_id),
-                "error": m.artifact.error,
-                "rows": comparable(m.artifact.rows),
-                # la misma cuenta que el middleware: el intento número n se revisa si needs_jev(result, n)
-                "reviewed": policy.needs_jev(m.artifact, len(found) + 1),
-                "decision": decision,
-                "reason": reason,
-            })
-    return found
+    """Cada intento del agente (middleware.review.attempts) con sus filas normalizadas, listo para Langfuse."""
+    return [
+        {"sql": a["sql"], "error": a["result"].error, "rows": comparable(a["result"].rows), "reviewed": a["reviewed"],
+         "decision": a["decision"], "reason": a["reason"]}
+        for a in review_middleware.attempts(messages)
+    ]
 
 
 def load_items(questions_path: str) -> list[dict]:

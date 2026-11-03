@@ -8,7 +8,7 @@ from pydantic import Field
 
 from src import policy
 from src.agent import tools
-from src.middleware.review import ReviewMiddleware
+from src.middleware.review import ReviewMiddleware, attempts
 from src.questions import review as jev
 from tests.test_agent import ScriptedModel, sql_call
 from tests.test_policy import verdict
@@ -104,3 +104,20 @@ def test_attempt_cap_stops_the_retries(monkeypatch):
     assert all("Reviewer: retry." in m.content for m in messages[:-1])
     assert "Reviewer: answer. Attempt limit reached." in messages[-1].content
     assert model.tool_choices[-1] == "none"
+
+
+def test_attempts_read_back_what_the_middleware_decided(monkeypatch):
+    monkeypatch.setattr(jev, "review", lambda q, sql, r: verdict("answer", customer_id_not_unique=0.9 if "COUNT(*)" in sql else 0.1))
+    model = RecordingModel(messages=iter([
+        sql_call("SELECT COUNT(*) FROM customers", "c1"),
+        sql_call("SELECT COUNT(DISTINCT customer_unique_id) FROM customers", "c2"),
+        AIMessage(content="There are 96096 customers."),
+    ]))
+    agent = create_agent(model, tools=[tools.run_sql], middleware=[ReviewMiddleware()])
+    messages = agent.invoke({"messages": [{"role": "user", "content": QUESTION}]})["messages"]
+
+    first, second = attempts(messages)
+
+    assert (first["sql"], first["decision"], first["reviewed"]) == ("SELECT COUNT(*) FROM customers", "retry", True)
+    assert first["reason"] == policy.TRAP_REASONS["customer_id_not_unique"]
+    assert second["decision"] == "answer" and second["result"].rows == [[99441]]
