@@ -23,6 +23,9 @@ TRAP_REASONS = {
     "wrong_date_column": "The query filters by a different date than the event in the question. "
     "Use the column for that event; with no event named, use order_purchase_timestamp.",
     "undelivered_as_sales": "Sales, items sold and revenue count only orders with order_status = 'delivered'.",
+    "status_as_event": "order_status is the order's current status, not its history: an order approved in January "
+    "can be 'delivered' today. Filter by the event's date column (for example order_approved_at) and drop the "
+    "order_status filter.",
 }
 
 

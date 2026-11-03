@@ -104,6 +104,20 @@ QUESTIONS = {
             "orders in general, or says to include every order status.",
         },
     ),
+    # Sexta trampa (02/11/2026): t08 leyó "approved in January" como order_status = 'approved' y dio 0 en tres
+    # corridas seguidas (traps.json, la prueba a mano del 08/10 y traps_jev). Ninguna de las otras la cubría.
+    "status_as_event": Noul(
+        instructions="The `question` asks about orders that went through an event in a period (placed, approved, "
+        "shipped, delivered), and the `sql` also requires order_status to equal that event, which drops the orders "
+        "that have since moved on to a later status.",
+        criteria={
+            "true": "For example order_status = 'approved' for orders approved in January, or order_status = "
+            "'shipped' for orders shipped in 2018.",
+            "false": "The SQL filters only the event's date column; or the question asks about the order's current "
+            "status (for example orders that have the status 'canceled'); or the filter is order_status = "
+            "'delivered', which is the last status and drops no delivered order.",
+        },
+    ),
 }
 
 

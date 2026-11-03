@@ -7,7 +7,8 @@ from types import SimpleNamespace
 from src.models import SqlResult
 from src.questions import review as rv
 
-TRAPS = {"customer_id_not_unique", "join_fanout", "wrong_grain", "wrong_date_column", "undelivered_as_sales"}
+TRAPS = {"customer_id_not_unique", "join_fanout", "wrong_grain", "wrong_date_column", "undelivered_as_sales",
+         "status_as_event"}
 
 
 def test_state_cuts_rows_and_turns_values_into_json():
